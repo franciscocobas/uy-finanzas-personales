@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createTransaction } from "./actions"
-import type { Account, Category, Concept } from "@/lib/generated/prisma/client"
+import type { Account, Category, Concept, TransactionType } from "@/lib/generated/prisma/client"
 
+type SerializedAccount = Omit<Account, "balance"> & { balance: number }
 type CategoryWithConcepts = Category & { concepts: Concept[] }
 
 const TRANSACTION_TYPE_LABELS = {
@@ -17,7 +18,7 @@ const TRANSACTION_TYPE_LABELS = {
 }
 
 interface TransactionFormProps {
-  accounts: Account[]
+  accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
   onDone: () => void
@@ -53,7 +54,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
 
     await createTransaction({
       date,
-      type: type as any,
+      type: type as TransactionType,
       amount: parseFloat(amount),
       description: description || undefined,
       conceptId,

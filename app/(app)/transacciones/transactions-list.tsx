@@ -8,12 +8,14 @@ import { TransactionForm } from "./transaction-form"
 import { deleteTransaction } from "./actions"
 import type { Account, Category, Concept, Transaction } from "@/lib/generated/prisma/client"
 
+type SerializedAccount = Omit<Account, "balance"> & { balance: number }
 type CategoryWithConcepts = Category & { concepts: Concept[] }
-type TransactionWithRelations = Transaction & {
+type SerializedTransaction = Omit<Transaction, "amount"> & {
+  amount: number
   concept: Concept & { category: Category }
-  account: Account | null
-  fromAccount: Account | null
-  toAccount: Account | null
+  account: SerializedAccount | null
+  fromAccount: SerializedAccount | null
+  toAccount: SerializedAccount | null
 }
 
 const TYPE_LABELS = {
@@ -37,8 +39,8 @@ function formatDate(date: Date) {
 }
 
 interface TransactionsListProps {
-  transactions: TransactionWithRelations[]
-  accounts: Account[]
+  transactions: SerializedTransaction[]
+  accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
 }

@@ -10,7 +10,7 @@ import {
   createCategory, updateCategory, deleteCategory,
   createConcept, updateConcept, deleteConcept,
 } from "./actions"
-import type { Category, Concept } from "@/lib/generated/prisma/client"
+import type { Category, Concept, CategoryType } from "@/lib/generated/prisma/client"
 
 type CategoryWithConcepts = Category & { concepts: Concept[] }
 
@@ -153,7 +153,7 @@ function CategoryRow({ category }: { category: CategoryWithConcepts }) {
           <CategoryForm
             defaultName={category.name}
             defaultType={category.type}
-            onSave={async (name, type) => { await updateCategory(category.id, name, type as any); setEditingCategory(false) }}
+            onSave={async (name, type) => { await updateCategory(category.id, name, type as CategoryType); setEditingCategory(false) }}
             onCancel={() => setEditingCategory(false)}
           />
         ) : (
@@ -226,7 +226,7 @@ export function CategoriesList({ categories }: { categories: CategoryWithConcept
       <div className="pt-2">
         {addingCategory ? (
           <CategoryForm
-            onSave={async (name, type) => { await createCategory(name, type as any); setAddingCategory(false) }}
+            onSave={async (name, type) => { await createCategory(name, type as CategoryType); setAddingCategory(false) }}
             onCancel={() => setAddingCategory(false)}
           />
         ) : (

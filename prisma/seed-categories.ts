@@ -1,11 +1,11 @@
 import "dotenv/config"
-import { PrismaClient } from "../lib/generated/prisma/client"
+import { PrismaClient, CategoryType } from "../lib/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
 
-const categories = [
+const categories: { name: string; type: CategoryType }[] = [
   { name: "Sueldos", type: "INCOME" },
   { name: "Honorarios", type: "INCOME" },
   { name: "Rentas", type: "INCOME" },
@@ -22,7 +22,7 @@ const categories = [
   { name: "Regalos, donaciones y aportes", type: "EXPENSE" },
   { name: "Gastos laborales", type: "EXPENSE" },
   { name: "Gastos varios", type: "EXPENSE" },
-] as const
+]
 
 async function main() {
   await prisma.category.createMany({

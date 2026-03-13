@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { createAccount, updateAccount } from "./actions"
-import type { Account } from "@/lib/generated/prisma/client"
+import type { Account, AccountType } from "@/lib/generated/prisma/client"
+
+type SerializedAccount = Omit<Account, "balance"> & { balance: number }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   CASH: "Efectivo",
@@ -16,13 +18,13 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 }
 
 interface AccountFormProps {
-  account?: Account
+  account?: SerializedAccount
   onDone: () => void
 }
 
 export function AccountForm({ account, onDone }: AccountFormProps) {
   const [name, setName] = useState(account?.name ?? "")
-  const [type, setType] = useState(account?.type ?? "CASH")
+  const [type, setType] = useState<AccountType>(account?.type ?? "CASH")
   const [active, setActive] = useState(account?.active ?? true)
   const [loading, setLoading] = useState(false)
 
@@ -30,9 +32,9 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
     e.preventDefault()
     setLoading(true)
     if (account) {
-      await updateAccount(account.id, name, type as any, active)
+      await updateAccount(account.id, name, type, active)
     } else {
-      await createAccount(name, type as any, active)
+      await createAccount(name, type, active)
     }
     setLoading(false)
     onDone()
@@ -52,7 +54,7 @@ export function AccountForm({ account, onDone }: AccountFormProps) {
       </div>
       <div className="space-y-2">
         <Label>Tipo</Label>
-        <Select value={type} onValueChange={setType}>
+        <Select value={type} onValueChange={(v) => setType(v as AccountType)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>

@@ -14,7 +14,16 @@ export async function getTransactions() {
       toAccount: true,
     },
   })
-  return transactions.map((t) => ({ ...t, amount: Number(t.amount) }))
+  const serializeAccount = (a: typeof transactions[0]["account"]) =>
+    a ? { ...a, balance: Number(a.balance) } : null
+
+  return transactions.map((t) => ({
+    ...t,
+    amount: Number(t.amount),
+    account: serializeAccount(t.account),
+    fromAccount: serializeAccount(t.fromAccount),
+    toAccount: serializeAccount(t.toAccount),
+  }))
 }
 
 export async function getFormData() {

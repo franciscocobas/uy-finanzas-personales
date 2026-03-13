@@ -7,18 +7,20 @@ import { deleteAccount, setDefaultAccount } from "./actions"
 import { Pencil, Trash2, Plus, Star } from "lucide-react"
 import type { Account } from "@/lib/generated/prisma/client"
 
+type SerializedAccount = Omit<Account, "balance"> & { balance: number }
+
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   CASH: "Efectivo",
   BANK: "Banco",
   CARD: "Tarjeta",
 }
 
-export function AccountsList({ accounts }: { accounts: Account[] }) {
+export function AccountsList({ accounts }: { accounts: SerializedAccount[] }) {
   const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<Account | null>(null)
+  const [editing, setEditing] = useState<SerializedAccount | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
 
-  function handleEdit(account: Account) {
+  function handleEdit(account: SerializedAccount) {
     setEditing(account)
     setShowForm(false)
     setConfirmingDelete(null)
