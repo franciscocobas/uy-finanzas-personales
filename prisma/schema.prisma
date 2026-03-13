@@ -15,9 +15,12 @@ model User {
 }
 
 model Account {
-  id   String      @id @default(cuid())
-  name String
-  type AccountType
+  id     String      @id @default(cuid())
+  name   String
+  type   AccountType
+  active    Boolean     @default(true)
+  balance   Decimal     @default(0) @db.Decimal(12, 2)
+  isDefault Boolean     @default(false)
 
   transactions         Transaction[] @relation("AccountTransactions")
   transfersFrom        Transaction[] @relation("TransferFrom")
@@ -25,9 +28,15 @@ model Account {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  name     String
+  id       String        @id @default(cuid())
+  name     String        @unique
+  type     CategoryType
   concepts Concept[]
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
 }
 
 model Concept {
@@ -36,6 +45,8 @@ model Concept {
   categoryId   String
   category     Category      @relation(fields: [categoryId], references: [id])
   transactions Transaction[]
+
+  @@unique([name, categoryId])
 }
 
 model Transaction {
