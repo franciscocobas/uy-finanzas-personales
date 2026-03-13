@@ -10,7 +10,8 @@
     "seed": "tsx prisma/seed.ts",
     "seed:categories": "tsx prisma/seed-categories.ts",
     "seed:concepts": "tsx prisma/seed-concepts.ts",
-    "seed:accounts": "tsx prisma/seed-accounts.ts"
+    "seed:accounts": "tsx prisma/seed-accounts.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
