@@ -7,7 +7,7 @@ import { deleteAccount, setDefaultAccount } from "./actions"
 import { Pencil, Trash2, Plus, Star } from "lucide-react"
 import type { Account } from "@/lib/generated/prisma/client"
 
-type SerializedAccount = Omit<Account, "balance"> & { balance: number }
+type SerializedAccount = Omit<Account, "balance"> & { balance: number; currentBalance: number }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   CASH: "Efectivo",
@@ -39,7 +39,7 @@ export function AccountsList({ accounts }: { accounts: SerializedAccount[] }) {
         )}
         {accounts.map((account) => (
           <div key={account.id}>
-            <div className={`flex items-center justify-between px-4 py-3 ${!account.active ? "opacity-50" : ""}`}>
+            <div className={`grid grid-cols-[1fr_auto_auto] items-center px-4 py-3 gap-4 ${!account.active ? "opacity-50" : ""}`}>
               <div>
                 <p className="font-medium">{account.name}</p>
                 <p className="text-sm text-muted-foreground">
@@ -47,6 +47,9 @@ export function AccountsList({ accounts }: { accounts: SerializedAccount[] }) {
                   {!account.active && " · Inactiva"}
                 </p>
               </div>
+              <p className="text-sm font-medium tabular-nums text-right">
+                Saldo: <span className={account.currentBalance < 0 ? "text-red-600" : ""}>{account.currentBalance.toLocaleString("es-UY", { minimumFractionDigits: 2 })}</span>
+              </p>
               <div className="flex items-center gap-1">
                 {confirmingDelete === account.id ? (
                   <>
