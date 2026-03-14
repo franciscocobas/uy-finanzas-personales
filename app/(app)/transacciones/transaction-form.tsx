@@ -141,9 +141,8 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
         <Label htmlFor="amount">Importe</Label>
         <Input
           id="amount"
-          type="number"
-          min="0"
-          step="0.01"
+          type="text"
+          inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
