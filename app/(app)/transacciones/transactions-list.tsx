@@ -29,6 +29,12 @@ const TYPE_COLORS = {
   TRANSFER: "bg-blue-100 text-blue-800 border-0",
 }
 
+const TYPE_DOT_COLORS = {
+  INCOME: "bg-green-100",
+  EXPENSE: "bg-red-100",
+  TRANSFER: "bg-blue-100",
+}
+
 function formatAmount(amount: unknown) {
   return Number(amount).toLocaleString("es-UY", { minimumFractionDigits: 2 })
 }
@@ -145,7 +151,8 @@ export function TransactionsList({
           <div key={t.id}>
             <div className="flex items-center justify-between px-4 py-3 gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <Badge className={TYPE_COLORS[t.type]}>{TYPE_LABELS[t.type]}</Badge>
+                <div className={`sm:hidden w-3 h-3 rounded-full shrink-0 ${TYPE_DOT_COLORS[t.type]}`} />
+                <Badge className={`hidden sm:inline-flex ${TYPE_COLORS[t.type]}`}>{TYPE_LABELS[t.type]}</Badge>
                 <div className="min-w-0">
                   <p className="font-medium truncate">
                     {t.type === "TRANSFER"
@@ -164,26 +171,9 @@ export function TransactionsList({
                   <p className="font-medium">{formatAmount(t.amount)}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(t.date)}</p>
                 </div>
-                {confirmingDelete === t.id ? (
-                  <>
-                    <span className="text-sm text-muted-foreground">¿Confirmás?</span>
-                    <Button variant="destructive" size="sm" onClick={() => { deleteTransaction(t.id); setConfirmingDelete(null) }}>
-                      Eliminar
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(null)}>
-                      Cancelar
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditingId(t.id); setConfirmingDelete(null) }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setConfirmingDelete(t.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </>
-                )}
+                <Button variant="ghost" size="icon" onClick={() => { setEditingId(editingId === t.id ? null : t.id); setConfirmingDelete(null) }}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
@@ -196,6 +186,37 @@ export function TransactionsList({
                   editing={buildEditingProps(t)}
                   onDone={() => setEditingId(null)}
                 />
+                <div className="mt-4 pt-4 border-t">
+                  {confirmingDelete === t.id ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">¿Confirmás la eliminación?</span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={async () => {
+                          await deleteTransaction(t.id)
+                          setEditingId(null)
+                          setConfirmingDelete(null)
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setConfirmingDelete(t.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -94,7 +94,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-[auto_1fr] gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label>Tipo</Label>
           <Select value={type} onValueChange={handleTypeChange}>
@@ -125,7 +125,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
           </div>
         )}
 
-        <div className="space-y-2">
+        <div className="col-span-2 sm:col-span-1 space-y-2">
           <Label htmlFor="date">Fecha</Label>
           <Input
             id="date"
