@@ -6,7 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { RawMovement, ReviewMovement } from "@/lib/importers/types"
+import type { ReviewMovement } from "@/lib/importers/types"
+
+type ResolvedMovement = {
+  date: Date
+  amount: number
+  type: "INCOME" | "EXPENSE"
+  description: string
+  accountId: string
+}
 import type { Account, Category, Concept } from "@/lib/generated/prisma/client"
 import { bulkCreateTransactions } from "./actions"
 
@@ -29,7 +37,7 @@ function formatAmount(amount: number) {
 }
 
 interface ReviewListProps {
-  movements: RawMovement[]
+  movements: ResolvedMovement[]
   duplicateFlags: boolean[]
   accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
