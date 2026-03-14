@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Pencil } from "lucide-react"
 import { TransactionForm } from "./transaction-form"
 import { deleteTransaction } from "./actions"
 import type { Account, Category, Concept, Transaction } from "@/lib/generated/prisma/client"
@@ -12,18 +13,16 @@ type SerializedAccount = Omit<Account, "balance"> & { balance: number }
 type CategoryWithConcepts = Category & { concepts: Concept[] }
 type SerializedTransaction = Omit<Transaction, "amount"> & {
   amount: number
-  concept: Concept & { category: Category }
+  concept: (Concept & { category: Category }) | null
   account: SerializedAccount | null
-  fromAccount: SerializedAccount | null
-  toAccount: SerializedAccount | null
 }
 
-const TYPE_LABELS = {
-  INCOME: "Ingreso",
-  EXPENSE: "Egreso",
-  TRANSFER: "Transferencia",
-}
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
 
+const TYPE_LABELS = { INCOME: "Ingreso", EXPENSE: "Egreso", TRANSFER: "Transferencia" }
 const TYPE_COLORS = {
   INCOME: "bg-green-100 text-green-800 border-0",
   EXPENSE: "bg-red-100 text-red-800 border-0",
@@ -43,20 +42,88 @@ interface TransactionsListProps {
   accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
+  year: number
+  month: number
+  availableMonths: number[]
+  availableYears: number[]
 }
 
-export function TransactionsList({ transactions, accounts, categories, defaultAccountId }: TransactionsListProps) {
+export function TransactionsList({
+  transactions,
+  accounts,
+  categories,
+  defaultAccountId,
+  year,
+  month,
+  availableMonths,
+  availableYears,
+}: TransactionsListProps) {
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
+  const router = useRouter()
+
+  function navigate(y: number, m: number) {
+    router.push(`/transacciones?year=${y}&month=${m}`)
+  }
+
+  function buildEditingProps(t: SerializedTransaction) {
+    if (t.type !== "TRANSFER") {
+      return { id: t.id, type: t.type, date: t.date, amount: t.amount, description: t.description, conceptId: t.conceptId, accountId: t.accountId, transferId: null }
+    }
+    // For transfers, find the partner record to get both accounts
+    const partner = transactions.find((o) => o.transferId && o.transferId === t.transferId && o.id !== t.id)
+    // Current record is "from" (outgoing → description starts with →) or "to"
+    const isOutgoing = t.description?.startsWith("→")
+    return {
+      id: t.id,
+      type: t.type,
+      date: t.date,
+      amount: t.amount,
+      description: t.description,
+      conceptId: null,
+      accountId: null,
+      transferId: t.transferId ?? null,
+      fromAccountId: isOutgoing ? t.accountId ?? undefined : partner?.accountId ?? undefined,
+      toAccountId: isOutgoing ? partner?.accountId ?? undefined : t.accountId ?? undefined,
+    }
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      {/* Year selector + new button */}
+      <div className="flex items-center justify-between gap-4">
+        <select
+          value={year}
+          onChange={(e) => router.push(`/transacciones?year=${e.target.value}`)}
+          className="border rounded-md px-3 py-1.5 text-sm bg-background"
+        >
+          {availableYears.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+
         <Button onClick={() => setShowForm((v) => !v)}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo comprobante
         </Button>
       </div>
 
+      {/* Month buttons */}
+      <div className="flex flex-wrap gap-2">
+        {[...availableMonths].reverse().map((m) => (
+          <Button
+            key={m}
+            variant={m === month ? "default" : "outline"}
+            size="sm"
+            onClick={() => navigate(year, m)}
+          >
+            {MONTH_NAMES[m - 1]}
+          </Button>
+        ))}
+      </div>
+
+      {/* New transaction form */}
       {showForm && (
         <div className="border rounded-lg p-4">
           <h3 className="font-medium mb-2">Nuevo comprobante</h3>
@@ -69,39 +136,68 @@ export function TransactionsList({ transactions, accounts, categories, defaultAc
         </div>
       )}
 
+      {/* Transactions */}
       <div className="border rounded-lg divide-y">
         {transactions.length === 0 && (
-          <p className="text-sm text-muted-foreground p-4">No hay transacciones registradas.</p>
+          <p className="text-sm text-muted-foreground p-4">No hay transacciones para este período.</p>
         )}
         {transactions.map((t) => (
-          <div key={t.id} className="flex items-center justify-between px-4 py-3 gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              {t.type === "INCOME" ? (
-                <Badge className={TYPE_COLORS.INCOME}>{TYPE_LABELS.INCOME}</Badge>
-              ) : t.type === "EXPENSE" ? (
-                <Badge className={TYPE_COLORS.EXPENSE}>{TYPE_LABELS.EXPENSE}</Badge>
-              ) : (
-                <Badge className={TYPE_COLORS.TRANSFER}>{TYPE_LABELS.TRANSFER}</Badge>
-              )}
-              <div className="min-w-0">
-                <p className="font-medium truncate">{t.concept.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {t.concept.category.name}
-                  {t.account && ` · ${t.account.name}`}
-                  {t.fromAccount && t.toAccount && ` · ${t.fromAccount.name} → ${t.toAccount.name}`}
-                  {t.description && ` · ${t.description}`}
-                </p>
+          <div key={t.id}>
+            <div className="flex items-center justify-between px-4 py-3 gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <Badge className={TYPE_COLORS[t.type]}>{TYPE_LABELS[t.type]}</Badge>
+                <div className="min-w-0">
+                  <p className="font-medium truncate">
+                    {t.type === "TRANSFER"
+                      ? <span className="font-normal">{t.description ?? "—"}</span>
+                      : <>{t.concept?.name ?? "—"}{t.description && <span className="font-normal text-muted-foreground"> — {t.description}</span>}</>
+                    }
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {t.concept?.category.name}
+                    {t.account && <> · <strong>{t.account.name}</strong></>}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right">
+                  <p className="font-medium">{formatAmount(t.amount)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(t.date)}</p>
+                </div>
+                {confirmingDelete === t.id ? (
+                  <>
+                    <span className="text-sm text-muted-foreground">¿Confirmás?</span>
+                    <Button variant="destructive" size="sm" onClick={() => { deleteTransaction(t.id); setConfirmingDelete(null) }}>
+                      Eliminar
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(null)}>
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditingId(t.id); setConfirmingDelete(null) }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setConfirmingDelete(t.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="text-right">
-                <p className="font-medium">{formatAmount(t.amount)}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(t.date)}</p>
+
+            {editingId === t.id && (
+              <div className="px-4 pb-4 border-t">
+                <TransactionForm
+                  accounts={accounts}
+                  categories={categories}
+                  defaultAccountId={defaultAccountId}
+                  editing={buildEditingProps(t)}
+                  onDone={() => setEditingId(null)}
+                />
               </div>
-              <Button variant="ghost" size="icon" onClick={() => deleteTransaction(t.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+            )}
           </div>
         ))}
       </div>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createTransaction } from "./actions"
+import { createTransaction, updateTransaction } from "./actions"
 import type { Account, Category, Concept, TransactionType } from "@/lib/generated/prisma/client"
 
 type SerializedAccount = Omit<Account, "balance"> & { balance: number }
@@ -17,24 +17,43 @@ const TRANSACTION_TYPE_LABELS = {
   TRANSFER: "Transferencia",
 }
 
+interface EditingTransaction {
+  id: string
+  type: string
+  date: Date
+  amount: number
+  description: string | null
+  conceptId: string | null
+  accountId: string | null
+  transferId: string | null
+  // for transfers, we need both accounts — passed from the list
+  fromAccountId?: string
+  toAccountId?: string
+}
+
 interface TransactionFormProps {
   accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
   onDone: () => void
+  editing?: EditingTransaction
 }
 
-export function TransactionForm({ accounts, categories, defaultAccountId, onDone }: TransactionFormProps) {
+export function TransactionForm({ accounts, categories, defaultAccountId, onDone, editing }: TransactionFormProps) {
   const today = new Date().toISOString().split("T")[0]
 
-  const [type, setType] = useState("EXPENSE")
-  const [date, setDate] = useState(today)
-  const [amount, setAmount] = useState("")
-  const [description, setDescription] = useState("")
-  const [conceptId, setConceptId] = useState("")
-  const [accountId, setAccountId] = useState(defaultAccountId ?? "")
-  const [fromAccountId, setFromAccountId] = useState("")
-  const [toAccountId, setToAccountId] = useState("")
+  function toDateInput(d: Date) {
+    return new Date(d).toLocaleDateString("en-CA") // yields YYYY-MM-DD
+  }
+
+  const [type, setType] = useState(editing?.type ?? "EXPENSE")
+  const [date, setDate] = useState(editing ? toDateInput(editing.date) : today)
+  const [amount, setAmount] = useState(editing ? String(editing.amount) : "")
+  const [description, setDescription] = useState(editing?.description ?? "")
+  const [conceptId, setConceptId] = useState(editing?.conceptId ?? "")
+  const [accountId, setAccountId] = useState(editing?.accountId ?? defaultAccountId ?? "")
+  const [fromAccountId, setFromAccountId] = useState(editing?.fromAccountId ?? "")
+  const [toAccountId, setToAccountId] = useState(editing?.toAccountId ?? "")
   const [loading, setLoading] = useState(false)
 
   const filteredCategories = useMemo(() => {
@@ -52,16 +71,22 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
     e.preventDefault()
     setLoading(true)
 
-    await createTransaction({
+    const data = {
       date,
       type: type as TransactionType,
       amount: parseFloat(amount),
       description: description || undefined,
-      conceptId,
+      conceptId: type !== "TRANSFER" ? conceptId : undefined,
       accountId: type !== "TRANSFER" ? accountId : undefined,
       fromAccountId: type === "TRANSFER" ? fromAccountId : undefined,
       toAccountId: type === "TRANSFER" ? toAccountId : undefined,
-    })
+    }
+
+    if (editing) {
+      await updateTransaction(editing.id, data)
+    } else {
+      await createTransaction(data)
+    }
 
     setLoading(false)
     onDone()
@@ -127,29 +152,26 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
       </div>
 
       {type !== "TRANSFER" && (
-        <>
-          <div className="space-y-2">
-            <Label>Concepto</Label>
-            <Select value={conceptId} onValueChange={setConceptId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccioná un concepto" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredCategories.map((category) => (
-                  <SelectGroup key={category.id}>
-                    <SelectLabel>{category.name}</SelectLabel>
-                    {category.concepts.map((concept) => (
-                      <SelectItem key={concept.id} value={concept.id}>
-                        {concept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-        </>
+        <div className="space-y-2">
+          <Label>Concepto</Label>
+          <Select value={conceptId} onValueChange={setConceptId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccioná un concepto" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredCategories.map((category) => (
+                <SelectGroup key={category.id}>
+                  <SelectLabel>{category.name}</SelectLabel>
+                  {category.concepts.map((concept) => (
+                    <SelectItem key={concept.id} value={concept.id}>
+                      {concept.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {type === "TRANSFER" && (
@@ -196,7 +218,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
 
       <div className="flex gap-2">
         <Button type="submit" disabled={loading}>
-          {loading ? "Guardando..." : "Guardar comprobante"}
+          {loading ? "Guardando..." : editing ? "Guardar cambios" : "Guardar comprobante"}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancelar
