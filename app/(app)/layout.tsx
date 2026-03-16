@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Sidebar onClose={() => setOpen(false)} />
             </SheetContent>
           </Sheet>
-          <span className="font-semibold">Finanzas</span>
+          <span className="font-semibold">Uy Finanzas Personales</span>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
