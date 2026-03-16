@@ -7,12 +7,12 @@ import { randomUUID } from "crypto"
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number)
-  return new Date(year, month - 1, day)
+  return new Date(Date.UTC(year, month - 1, day))
 }
 
 export async function getTransactions(year: number, month: number) {
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 1)
+  const startDate = new Date(Date.UTC(year, month - 1, 1))
+  const endDate = new Date(Date.UTC(year, month, 1))
 
   const transactions = await prisma.transaction.findMany({
     where: { date: { gte: startDate, lt: endDate } },
@@ -36,7 +36,7 @@ export async function getTransactions(year: number, month: number) {
 export async function getAvailableMonths(year: number): Promise<number[]> {
   const transactions = await prisma.transaction.findMany({
     where: {
-      date: { gte: new Date(year, 0, 1), lt: new Date(year + 1, 0, 1) },
+      date: { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) },
     },
     select: { date: true },
   })

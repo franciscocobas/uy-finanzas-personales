@@ -40,10 +40,12 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ accounts, categories, defaultAccountId, onDone, editing }: TransactionFormProps) {
-  const today = new Date().toISOString().split("T")[0]
+  const today = new Date().toLocaleDateString("en-CA") // YYYY-MM-DD in local tz
 
   function toDateInput(d: Date) {
-    return new Date(d).toLocaleDateString("en-CA") // yields YYYY-MM-DD
+    // Dates are stored as UTC midnight — extract UTC components to avoid timezone shift
+    const dt = new Date(d)
+    return dt.toISOString().split("T")[0]
   }
 
   const [type, setType] = useState(editing?.type ?? "EXPENSE")
@@ -74,7 +76,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
     const data = {
       date,
       type: type as TransactionType,
-      amount: parseFloat(amount),
+      amount: parseFloat(amount.replace(",", ".")),
       description: description || undefined,
       conceptId: type !== "TRANSFER" ? conceptId : undefined,
       accountId: type !== "TRANSFER" ? accountId : undefined,
