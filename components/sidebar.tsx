@@ -15,19 +15,20 @@ const navItems = [
   { href: "/importar", label: "Importar", icon: Upload },
 ]
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
 
   return (
     <aside className="flex h-full w-60 flex-col border-r bg-background">
       <div className="p-6">
-        <h1 className="text-lg font-semibold">Finanzas</h1>
+        <h1 className="text-lg font-semibold">Uy Finanzas Personales</h1>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
+            onClick={onClose}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
               pathname === href
@@ -44,7 +45,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground"
-          onClick={() => signOut()}
+          onClick={() => { signOut(); onClose?.() }}
         >
           <LogOut className="h-4 w-4" />
           Cerrar sesión
