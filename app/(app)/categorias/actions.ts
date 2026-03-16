@@ -36,6 +36,12 @@ export async function updateConcept(id: string, name: string) {
   revalidatePath("/categorias")
 }
 
+export async function toggleConceptRecurring(id: string, recurring: boolean) {
+  await prisma.concept.update({ where: { id }, data: { recurring } })
+  revalidatePath("/categorias")
+  revalidatePath("/")
+}
+
 export async function deleteConcept(id: string) {
   await prisma.concept.delete({ where: { id } })
   revalidatePath("/categorias")

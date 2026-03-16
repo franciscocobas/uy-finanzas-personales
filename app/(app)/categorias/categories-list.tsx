@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react"
+import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, RefreshCw } from "lucide-react"
 import {
   createCategory, updateCategory, deleteCategory,
-  createConcept, updateConcept, deleteConcept,
+  createConcept, updateConcept, deleteConcept, toggleConceptRecurring,
 } from "./actions"
 import type { Category, Concept, CategoryType } from "@/lib/generated/prisma/client"
 
@@ -126,8 +126,22 @@ function ConceptRow({ concept }: { concept: Concept }) {
         />
       ) : (
         <>
-          <span className="text-sm">{concept.name}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{concept.name}</span>
+            {concept.recurring && (
+              <span className="text-xs text-muted-foreground border rounded px-1.5 py-0.5">recurrente</span>
+            )}
+          </div>
           <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-7 w-7 ${concept.recurring ? "text-primary" : "text-muted-foreground"}`}
+              title={concept.recurring ? "Quitar recurrente" : "Marcar como recurrente"}
+              onClick={() => toggleConceptRecurring(concept.id, !concept.recurring)}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>

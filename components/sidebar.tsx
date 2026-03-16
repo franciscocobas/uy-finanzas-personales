@@ -11,7 +11,7 @@ const navItems = [
   { href: "/", label: "Inicio", icon: LayoutDashboard },
   { href: "/transacciones", label: "Comprobantes", icon: ArrowLeftRight },
   { href: "/cuentas", label: "Cuentas", icon: Wallet },
-  { href: "/categorias", label: "Categorías", icon: Tags },
+  { href: "/categorias", label: "Categorías y Conceptos", icon: Tags },
   { href: "/importar", label: "Importar", icon: Upload },
 ]
 

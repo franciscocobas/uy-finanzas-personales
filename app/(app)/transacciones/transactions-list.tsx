@@ -40,7 +40,7 @@ function formatAmount(amount: unknown) {
 }
 
 function formatDate(date: Date) {
-  return new Date(date).toLocaleDateString("es-UY")
+  return new Date(date).toLocaleDateString("es-UY", { timeZone: "UTC" })
 }
 
 interface TransactionsListProps {

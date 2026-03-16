@@ -29,7 +29,7 @@ const TYPE_COLORS = {
 }
 
 function formatDate(date: Date) {
-  return new Date(date).toLocaleDateString("es-UY")
+  return new Date(date).toLocaleDateString("es-UY", { timeZone: "UTC" })
 }
 
 function formatAmount(amount: number) {
