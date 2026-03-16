@@ -112,18 +112,45 @@ function InlineInput({
   )
 }
 
-function ConceptRow({ concept }: { concept: Concept }) {
+function ConceptRow({ concept, categories }: { concept: Concept; categories: CategoryWithConcepts[] }) {
   const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState(concept.name)
+  const [editCategoryId, setEditCategoryId] = useState(concept.categoryId)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editName.trim()) return
+    setLoading(true)
+    await updateConcept(concept.id, editName.trim(), editCategoryId)
+    setLoading(false)
+    setEditing(false)
+  }
 
   return (
     <div className="flex items-center justify-between py-1.5 pl-4">
       {editing ? (
-        <InlineInput
-          defaultValue={concept.name}
-          placeholder="Nombre del concepto"
-          onSave={async (name) => { await updateConcept(concept.id, name); setEditing(false) }}
-          onCancel={() => setEditing(false)}
-        />
+        <form onSubmit={handleSave} className="flex gap-2 items-center flex-wrap">
+          <Input
+            autoFocus
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="Nombre del concepto"
+            className="h-8 text-sm w-40"
+          />
+          <Select value={editCategoryId} onValueChange={setEditCategoryId}>
+            <SelectTrigger className="h-8 text-sm w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button type="submit" size="sm" disabled={loading}>{loading ? "..." : "Guardar"}</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
+        </form>
       ) : (
         <>
           <div className="flex items-center gap-2">
@@ -155,7 +182,7 @@ function ConceptRow({ concept }: { concept: Concept }) {
   )
 }
 
-function CategoryRow({ category }: { category: CategoryWithConcepts }) {
+function CategoryRow({ category, categories }: { category: CategoryWithConcepts; categories: CategoryWithConcepts[] }) {
   const [expanded, setExpanded] = useState(category.concepts.length > 0)
   const [editingCategory, setEditingCategory] = useState(false)
   const [addingConcept, setAddingConcept] = useState(false)
@@ -202,7 +229,7 @@ function CategoryRow({ category }: { category: CategoryWithConcepts }) {
       {expanded && (
         <div className="border-t px-4 py-2 space-y-1">
           {category.concepts.map((concept) => (
-            <ConceptRow key={concept.id} concept={concept} />
+            <ConceptRow key={concept.id} concept={concept} categories={categories} />
           ))}
           {addingConcept ? (
             <div className="pt-1 pl-4">
@@ -251,7 +278,7 @@ export function CategoriesList({ categories }: { categories: CategoryWithConcept
         )}
       </div>
       {categories.map((category) => (
-        <CategoryRow key={category.id} category={category} />
+        <CategoryRow key={category.id} category={category} categories={categories} />
       ))}
     </div>
   )

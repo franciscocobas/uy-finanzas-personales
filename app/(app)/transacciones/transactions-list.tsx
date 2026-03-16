@@ -67,7 +67,12 @@ export function TransactionsList({
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState("")
   const router = useRouter()
+
+  const visibleTransactions = categoryFilter
+    ? transactions.filter((t) => t.concept?.category.id === categoryFilter)
+    : transactions
 
   function navigate(y: number, m: number) {
     router.push(`/transacciones?year=${y}&month=${m}`)
@@ -129,6 +134,18 @@ export function TransactionsList({
         ))}
       </div>
 
+      {/* Category filter */}
+      <select
+        value={categoryFilter}
+        onChange={(e) => { setCategoryFilter(e.target.value); setEditingId(null); setConfirmingDelete(null) }}
+        className="border rounded-md px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
+      >
+        <option value="">Todas las categorías</option>
+        {categories.map((c) => (
+          <option key={c.id} value={c.id}>{c.name}</option>
+        ))}
+      </select>
+
       {/* New transaction form */}
       {showForm && (
         <div className="border rounded-lg p-4">
@@ -144,10 +161,10 @@ export function TransactionsList({
 
       {/* Transactions */}
       <div className="border rounded-lg divide-y">
-        {transactions.length === 0 && (
+        {visibleTransactions.length === 0 && (
           <p className="text-sm text-muted-foreground p-4">No hay transacciones para este período.</p>
         )}
-        {transactions.map((t) => (
+        {visibleTransactions.map((t) => (
           <div key={t.id}>
             <div className="flex items-center justify-between px-4 py-3 gap-4">
               <div className="flex items-center gap-3 min-w-0">
