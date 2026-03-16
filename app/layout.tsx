@@ -10,6 +10,10 @@ const geist = Geist({
 export const metadata: Metadata = {
   title: "Finanzas Personales",
   description: "App de finanzas personales",
+  icons: {
+    icon: "/logo.png",
+    apple: "/apple-touch-icon.png",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
