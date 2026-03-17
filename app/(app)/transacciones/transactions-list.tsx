@@ -36,11 +36,14 @@ export function TransactionsList({
 }: TransactionsListProps) {
   const [showForm, setShowForm] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("")
+  const [accountFilter, setAccountFilter] = useState("")
   const router = useRouter()
 
-  const visibleTransactions = categoryFilter
-    ? transactions.filter((t) => t.concept?.category.id === categoryFilter)
-    : transactions
+  const visibleTransactions = transactions.filter((t) => {
+    if (categoryFilter && t.concept?.category.id !== categoryFilter) return false
+    if (accountFilter && t.accountId !== accountFilter) return false
+    return true
+  })
 
   function navigate(y: number, m: number) {
     router.push(`/transacciones?year=${y}&month=${m}`)
@@ -87,17 +90,29 @@ export function TransactionsList({
         ))}
       </div>
 
-      {/* Category filter */}
-      <select
-        value={categoryFilter}
-        onChange={(e) => setCategoryFilter(e.target.value)}
-        className="border rounded-md px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
-      >
-        <option value="">Todas las categorías</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>{c.name}</option>
-        ))}
-      </select>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="border rounded-md px-3 py-1.5 text-sm bg-background"
+        >
+          <option value="">Todas las categorías</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <select
+          value={accountFilter}
+          onChange={(e) => setAccountFilter(e.target.value)}
+          className="border rounded-md px-3 py-1.5 text-sm bg-background"
+        >
+          <option value="">Todas las cuentas</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+      </div>
 
       {/* New transaction form */}
       {showForm && (
