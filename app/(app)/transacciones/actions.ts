@@ -52,6 +52,31 @@ export async function getAvailableYears(): Promise<number[]> {
   return years.sort((a, b) => b - a)
 }
 
+export async function searchTransactions(query: string) {
+  if (!query.trim()) return []
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      OR: [
+        { description: { contains: query, mode: "insensitive" } },
+        { concept: { name: { contains: query, mode: "insensitive" } } },
+      ],
+    },
+    orderBy: { date: "desc" },
+    include: {
+      concept: { include: { category: true } },
+      account: true,
+    },
+    take: 100,
+  })
+
+  return transactions.map((t) => ({
+    ...t,
+    amount: Number(t.amount),
+    account: t.account ? { ...t.account, balance: Number(t.account.balance) } : null,
+  }))
+}
+
 export async function getFormData() {
   const [accounts, categories] = await Promise.all([
     prisma.account.findMany({ orderBy: { name: "asc" }, where: { active: true } }).then((a) => a.map((acc) => ({ ...acc, balance: Number(acc.balance) }))),
