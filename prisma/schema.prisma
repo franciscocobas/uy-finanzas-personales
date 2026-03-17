@@ -42,6 +42,7 @@ model Concept {
   name         String
   categoryId   String
   recurring    Boolean       @default(false)
+  active       Boolean       @default(true)
   category     Category      @relation(fields: [categoryId], references: [id])
   transactions Transaction[]
 

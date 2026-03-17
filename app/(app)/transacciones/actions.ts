@@ -57,7 +57,7 @@ export async function getFormData() {
     prisma.account.findMany({ orderBy: { name: "asc" }, where: { active: true } }).then((a) => a.map((acc) => ({ ...acc, balance: Number(acc.balance) }))),
     prisma.category.findMany({
       orderBy: { name: "asc" },
-      include: { concepts: { orderBy: { name: "asc" } } },
+      include: { concepts: { where: { active: true }, orderBy: { name: "asc" } } },
     }),
   ])
   const defaultAccountId = accounts.find((a) => a.isDefault)?.id ?? null
