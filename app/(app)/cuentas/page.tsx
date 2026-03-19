@@ -14,6 +14,7 @@ export default async function CuentasPage() {
       const amt = Number(t.amount)
       if (t.type === "INCOME") return sum + amt
       if (t.type === "EXPENSE") return sum - amt
+      if (t.type === "ADJUSTMENT") return sum + amt
       return t.description?.startsWith("←") ? sum + amt : sum - amt
     }, 0)
     const { transactions: _, ...account } = a

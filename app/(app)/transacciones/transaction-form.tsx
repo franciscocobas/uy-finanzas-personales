@@ -15,6 +15,7 @@ const TRANSACTION_TYPE_LABELS = {
   INCOME: "Ingreso",
   EXPENSE: "Egreso",
   TRANSFER: "Transferencia",
+  ADJUSTMENT: "Ajuste de saldo",
 }
 
 interface EditingTransaction {
@@ -59,7 +60,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
   const [loading, setLoading] = useState(false)
 
   const filteredCategories = useMemo(() => {
-    if (type === "TRANSFER") return []
+    if (type === "TRANSFER" || type === "ADJUSTMENT") return []
     const categoryType = type === "INCOME" ? "INCOME" : "EXPENSE"
     return categories.filter((c) => c.type === categoryType && c.concepts.length > 0)
   }, [type, categories])
@@ -78,7 +79,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
       type: type as TransactionType,
       amount: parseFloat(amount.replace(",", ".")),
       description: description || undefined,
-      conceptId: type !== "TRANSFER" ? conceptId : undefined,
+      conceptId: (type !== "TRANSFER" && type !== "ADJUSTMENT") ? conceptId : undefined,
       accountId: type !== "TRANSFER" ? accountId : undefined,
       fromAccountId: type === "TRANSFER" ? fromAccountId : undefined,
       toAccountId: type === "TRANSFER" ? toAccountId : undefined,
@@ -140,7 +141,9 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="amount">Importe</Label>
+        <Label htmlFor="amount">
+          Importe{type === "ADJUSTMENT" && <span className="ml-2 text-xs text-muted-foreground font-normal">negativo para bajar el saldo</span>}
+        </Label>
         <Input
           id="amount"
           type="text"
@@ -152,7 +155,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
         />
       </div>
 
-      {type !== "TRANSFER" && (
+      {type !== "TRANSFER" && type !== "ADJUSTMENT" && (
         <div className="space-y-2">
           <Label>Concepto</Label>
           <Select value={conceptId} onValueChange={setConceptId}>

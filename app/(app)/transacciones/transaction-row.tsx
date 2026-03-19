@@ -16,16 +16,18 @@ export type SerializedTransaction = Omit<Transaction, "amount"> & {
   account: SerializedAccount | null
 }
 
-export const TYPE_LABELS = { INCOME: "Ingreso", EXPENSE: "Egreso", TRANSFER: "Transferencia" }
+export const TYPE_LABELS = { INCOME: "Ingreso", EXPENSE: "Egreso", TRANSFER: "Transferencia", ADJUSTMENT: "Ajuste" }
 export const TYPE_COLORS = {
   INCOME: "bg-green-100 text-green-800 border-0",
   EXPENSE: "bg-red-100 text-red-800 border-0",
   TRANSFER: "bg-blue-100 text-blue-800 border-0",
+  ADJUSTMENT: "bg-yellow-100 text-yellow-800 border-0",
 }
 export const TYPE_DOT_COLORS = {
   INCOME: "bg-green-100",
   EXPENSE: "bg-red-100",
   TRANSFER: "bg-blue-100",
+  ADJUSTMENT: "bg-yellow-100",
 }
 
 export function formatAmount(amount: number) {
@@ -76,7 +78,7 @@ export function TransactionRow({ transaction: t, allTransactions, accounts, cate
           <Badge className={`hidden sm:inline-flex ${TYPE_COLORS[t.type]}`}>{TYPE_LABELS[t.type]}</Badge>
           <div className="min-w-0">
             <p className="font-medium truncate">
-              {t.type === "TRANSFER"
+              {t.type === "TRANSFER" || t.type === "ADJUSTMENT"
                 ? <span className="font-normal">{t.description ?? "—"}</span>
                 : <>{t.concept?.name ?? "—"}{t.description && <span className="font-normal text-muted-foreground"> — {t.description}</span>}</>
               }
