@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma"
 import { AccountsList } from "./accounts-list"
 
+export const revalidate = 3600
+
 export default async function CuentasPage() {
   const accounts = await prisma.account.findMany({
     orderBy: { name: "asc" },
