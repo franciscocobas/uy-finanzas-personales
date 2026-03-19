@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma"
 import { MonthlyChart } from "./monthly-chart"
 import { CategoryPieChart } from "./category-pie-chart"
 
+export const revalidate = 3600 // 1 hora
+
 function formatAmount(amount: number) {
   return amount.toLocaleString("es-UY", { minimumFractionDigits: 2 })
 }
@@ -16,7 +18,7 @@ export default async function HomePage() {
   const year = now.getUTCFullYear()
   const month = now.getUTCMonth() // 0-indexed
 
-  const [monthTransactions, yearTransactions, recurringConcepts, expensesByCategory] = await Promise.all([
+  const [monthTransactions, yearTransactions, recurringConcepts, expensesByCategory, last12MonthsExpenses] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         date: { gte: new Date(Date.UTC(year, month, 1)), lt: new Date(Date.UTC(year, month + 1, 1)) },
@@ -39,6 +41,14 @@ export default async function HomePage() {
     prisma.transaction.findMany({
       where: {
         date: { gte: new Date(Date.UTC(year, month, 1)), lt: new Date(Date.UTC(year, month + 1, 1)) },
+        type: "EXPENSE",
+        concept: { isNot: null },
+      },
+      select: { amount: true, concept: { select: { category: { select: { name: true } } } } },
+    }),
+    prisma.transaction.findMany({
+      where: {
+        date: { gte: new Date(Date.UTC(year, month - 12, 1)), lt: new Date(Date.UTC(year, month, 1)) },
         type: "EXPENSE",
         concept: { isNot: null },
       },
@@ -81,6 +91,22 @@ export default async function HomePage() {
   const categoryData = Object.entries(categoryMap)
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount)
+
+  // Monthly average per category over last 12 months (excluding current month)
+  const last12Map: Record<string, number> = {}
+  for (const t of last12MonthsExpenses) {
+    const name = t.concept?.category?.name
+    if (!name) continue
+    last12Map[name] = (last12Map[name] ?? 0) + Number(t.amount)
+  }
+  const categoryAverages = Object.entries(last12Map)
+    .map(([category, total]) => ({ category, average: total / 12 }))
+    .sort((a, b) => b.average - a.average)
+
+  // Date range label for last 12 months
+  const rangeStart = new Date(Date.UTC(year, month - 12, 1))
+  const rangeEnd = new Date(Date.UTC(year, month - 1, 1))
+  const rangeLabel = `${MONTH_NAMES[rangeStart.getUTCMonth()]} ${rangeStart.getUTCFullYear()} – ${MONTH_NAMES[rangeEnd.getUTCMonth()]} ${rangeEnd.getUTCFullYear()}`
 
   return (
     <div className="space-y-6">
@@ -147,6 +173,23 @@ export default async function HomePage() {
             <h3 className="text-sm font-medium text-muted-foreground mb-3">{year} — Ingresos vs Egresos</h3>
             <div className="border rounded-lg p-4">
               <MonthlyChart data={monthlyData} />
+            </div>
+          </div>
+        )}
+
+        {/* Promedio mensual por categoría — últimos 12 meses */}
+        {categoryAverages.length > 0 && (
+          <div className="sm:col-span-3">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              Promedio mensual por categoría — {rangeLabel}
+            </h3>
+            <div className="border rounded-lg divide-y">
+              {categoryAverages.map(({ category, average }) => (
+                <div key={category} className="flex items-center justify-between px-4 py-2">
+                  <p className="text-sm">{category}</p>
+                  <p className="text-sm font-medium tabular-nums text-red-600">{formatAmount(average)}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
