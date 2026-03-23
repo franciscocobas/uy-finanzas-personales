@@ -119,11 +119,11 @@ export default async function PresupuestoPage() {
           </button>
         </form>
       </div>
-      <div className="overflow-x-auto rounded-md border">
+      <div className="overflow-auto rounded-md border" style={{ maxHeight: "calc(100vh - 140px)" }}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="sticky left-0 bg-muted/50 px-3 py-2 text-left font-medium">Concepto</th>
+            <tr className="sticky top-0 z-10 bg-muted/50 [box-shadow:0_1px_0_#d3d3d3]">
+              <th className="sticky left-0 z-20 bg-muted/50 px-3 py-2 text-left font-medium">Concepto</th>
               {MONTHS.map((m) => (
                 <th key={m} className="border-l border-border px-3 py-2 text-right font-medium">
                   {m}
