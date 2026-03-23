@@ -1,7 +1,13 @@
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { AccountsList } from "./accounts-list"
 
 export const revalidate = 3600
+
+async function revalidarCuentas() {
+  "use server"
+  revalidatePath("/cuentas")
+}
 
 export default async function CuentasPage() {
   const accounts = await prisma.account.findMany({
@@ -29,7 +35,14 @@ export default async function CuentasPage() {
 
   return (
     <div className="max-w-xl space-y-6">
-      <h2 className="text-2xl font-semibold">Cuentas</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Cuentas</h2>
+        <form action={revalidarCuentas}>
+          <button type="submit" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
+            Revalidar
+          </button>
+        </form>
+      </div>
       <AccountsList accounts={accountsWithBalance} />
     </div>
   )
