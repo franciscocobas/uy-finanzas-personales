@@ -64,14 +64,15 @@ interface TransactionRowProps {
   accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
+  shaded?: boolean
 }
 
-export function TransactionRow({ transaction: t, allTransactions, accounts, categories, defaultAccountId }: TransactionRowProps) {
+export function TransactionRow({ transaction: t, allTransactions, accounts, categories, defaultAccountId, shaded }: TransactionRowProps) {
   const [editing, setEditing] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   return (
-    <div>
+    <div className={shaded ? "bg-muted/50" : undefined}>
       <div className="flex items-center justify-between px-4 py-3 gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className={`sm:hidden w-3 h-3 rounded-full shrink-0 ${TYPE_DOT_COLORS[t.type]}`} />

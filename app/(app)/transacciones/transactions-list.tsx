@@ -132,16 +132,28 @@ export function TransactionsList({
         {visibleTransactions.length === 0 && (
           <p className="text-sm text-muted-foreground p-4">No hay transacciones para este período.</p>
         )}
-        {visibleTransactions.map((t) => (
-          <TransactionRow
-            key={t.id}
-            transaction={t}
-            allTransactions={transactions}
-            accounts={accounts}
-            categories={categories}
-            defaultAccountId={defaultAccountId}
-          />
-        ))}
+        {(() => {
+          let dayGroupIndex = 0
+          let lastDateKey = ""
+          return visibleTransactions.map((t) => {
+            const dateKey = new Date(t.date).toISOString().slice(0, 10)
+            if (dateKey !== lastDateKey) {
+              if (lastDateKey !== "") dayGroupIndex++
+              lastDateKey = dateKey
+            }
+            return (
+              <TransactionRow
+                key={t.id}
+                transaction={t}
+                allTransactions={transactions}
+                accounts={accounts}
+                categories={categories}
+                defaultAccountId={defaultAccountId}
+                shaded={dayGroupIndex % 2 === 0}
+              />
+            )
+          })
+        })()}
       </div>
     </div>
   )
