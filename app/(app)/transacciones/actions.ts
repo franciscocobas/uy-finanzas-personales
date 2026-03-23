@@ -16,7 +16,7 @@ export async function getTransactions(year: number, month: number) {
 
   const transactions = await prisma.transaction.findMany({
     where: { date: { gte: startDate, lt: endDate } },
-    orderBy: { date: "desc" },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: {
       concept: { include: { category: true } },
       account: true,
