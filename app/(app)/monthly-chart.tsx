@@ -17,11 +17,11 @@ interface MonthlyData {
 }
 
 export function MonthlyChart({ data }: { data: MonthlyData[] }) {
-  const chartData = data.map((d) => ({
-    month: MONTH_SHORT[d.month - 1],
-    income: d.income,
-    expense: d.expense,
-  }))
+  const dataByMonth = new Map(data.map((d) => [d.month, d]))
+  const chartData = MONTH_SHORT.map((label, i) => {
+    const d = dataByMonth.get(i + 1)
+    return { month: label, income: d?.income ?? 0, expense: d?.expense ?? 0 }
+  })
 
   return (
     <ChartContainer config={chartConfig} className="h-48 w-full">
