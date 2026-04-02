@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import { YearSelect } from "./year-select"
 
 async function revalidarPresupuesto() {
   "use server"
@@ -13,8 +14,17 @@ function fmt(n: number) {
   return n.toLocaleString("es-UY", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
-export default async function PresupuestoPage() {
-  const year = new Date().getFullYear()
+export default async function PresupuestoPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
+  const currentYear = new Date().getFullYear()
+  const { year: yearParam } = await searchParams
+  const year = yearParam ? parseInt(yearParam) : currentYear
+
+  const minYearResult = await prisma.transaction.findFirst({
+    orderBy: { date: "asc" },
+    select: { date: true },
+  })
+  const minYear = minYearResult ? new Date(minYearResult.date).getUTCFullYear() : currentYear
+  const years = Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i)
 
   const [concepts, transactions] = await Promise.all([
     prisma.concept.findMany({
@@ -113,11 +123,14 @@ export default async function PresupuestoPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Presupuesto {year}</h2>
-        <form action={revalidarPresupuesto}>
-          <button type="submit" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-            Revalidar
-          </button>
-        </form>
+        <div className="flex items-center gap-3">
+          <YearSelect years={years} selected={year} />
+          <form action={revalidarPresupuesto}>
+            <button type="submit" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
+              Revalidar
+            </button>
+          </form>
+        </div>
       </div>
       <div className="overflow-auto rounded-md border" style={{ maxHeight: "calc(100vh - 140px)" }}>
         <table className="w-full text-sm">

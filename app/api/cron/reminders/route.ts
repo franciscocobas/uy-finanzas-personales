@@ -37,10 +37,12 @@ export async function GET(request: Request) {
 
   const mesNombre = `${MONTH_NAMES[month]} ${year}`;
 
-  const [recurringConcepts, monthTransactions] = await Promise.all([
+  const currentMonth = month + 1
+
+  const [allRecurringConcepts, monthTransactions] = await Promise.all([
     prisma.concept.findMany({
       where: { recurring: true, active: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, recurringMonths: true },
       orderBy: { name: "asc" },
     }),
     prisma.transaction.findMany({
@@ -54,6 +56,10 @@ export async function GET(request: Request) {
       select: { conceptId: true },
     }),
   ]);
+
+  const recurringConcepts = allRecurringConcepts.filter(
+    (c) => c.recurringMonths.length === 0 || c.recurringMonths.includes(currentMonth)
+  )
 
   const paidConceptIds = new Set(monthTransactions.map((t) => t.conceptId).filter(Boolean));
 

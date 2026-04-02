@@ -35,7 +35,7 @@ export default async function HomePage() {
     }),
     prisma.concept.findMany({
       where: { recurring: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, recurringMonths: true },
       orderBy: { name: "asc" },
     }),
     prisma.transaction.findMany({
@@ -65,6 +65,12 @@ export default async function HomePage() {
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
   const balance = income - expense
+
+  // Filter recurring concepts applicable to current month (1-indexed)
+  const currentMonth = month + 1
+  const applicableRecurring = recurringConcepts.filter(
+    (c) => c.recurringMonths.length === 0 || c.recurringMonths.includes(currentMonth)
+  )
 
   // Which recurring concepts were paid this month
   const paidConceptIds = new Set(monthTransactions.map((t) => t.conceptId).filter(Boolean))
@@ -114,11 +120,11 @@ export default async function HomePage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
         {/* Col izquierda: pagos recurrentes */}
-        {recurringConcepts.length > 0 && (
+        {applicableRecurring.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">Pagos recurrentes</h3>
             <div className="border rounded-lg divide-y">
-              {recurringConcepts.map((concept) => {
+              {applicableRecurring.map((concept) => {
                 const paid = paidConceptIds.has(concept.id)
                 return (
                   <div key={concept.id} className="flex items-center justify-between px-4 py-1">

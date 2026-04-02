@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, RefreshCw, EyeOff, Eye } from "lucide-react"
 import {
   createCategory, updateCategory, deleteCategory,
-  createConcept, updateConcept, deleteConcept, toggleConceptRecurring, toggleConceptActive,
+  createConcept, updateConcept, deleteConcept, toggleConceptRecurring, toggleConceptActive, setConceptRecurringMonths,
 } from "./actions"
 import type { Category, Concept, CategoryType } from "@/lib/generated/prisma/client"
 
@@ -18,6 +18,8 @@ const CATEGORY_TYPE_LABELS: Record<string, string> = {
   INCOME: "Ingreso",
   EXPENSE: "Egreso",
 }
+
+const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 
 function CategoryForm({
   defaultName = "",
@@ -153,16 +155,48 @@ function ConceptRow({ concept, categories }: { concept: Concept; categories: Cat
         </form>
       ) : (
         <>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm ${!concept.active ? "text-muted-foreground line-through" : ""}`}>{concept.name}</span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className={`text-sm ${!concept.active ? "text-muted-foreground line-through" : ""}`}>{concept.name}</span>
+              {concept.recurring && (
+                <span className="text-xs text-muted-foreground border rounded px-1.5 py-0.5">
+                  {concept.recurringMonths.length === 0
+                    ? "recurrente"
+                    : `recurrente: ${concept.recurringMonths.map((m) => MONTH_SHORT[m - 1]).join(" ")}`}
+                </span>
+              )}
+              {!concept.active && (
+                <span className="text-xs text-muted-foreground border rounded px-1.5 py-0.5">inactivo</span>
+              )}
+            </div>
             {concept.recurring && (
-              <span className="text-xs text-muted-foreground border rounded px-1.5 py-0.5">recurrente</span>
-            )}
-            {!concept.active && (
-              <span className="text-xs text-muted-foreground border rounded px-1.5 py-0.5">inactivo</span>
+              <div className="flex gap-0.5 pl-0">
+                {MONTH_SHORT.map((label, i) => {
+                  const m = i + 1
+                  const selected = concept.recurringMonths.includes(m)
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        const next = selected
+                          ? concept.recurringMonths.filter((x) => x !== m)
+                          : [...concept.recurringMonths, m].sort((a, b) => a - b)
+                        setConceptRecurringMonths(concept.id, next)
+                      }}
+                      className={`rounded px-1 py-0.5 text-xs transition-colors ${
+                        selected
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 self-start">
             <Button
               variant="ghost"
               size="icon"

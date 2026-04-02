@@ -42,6 +42,12 @@ export async function toggleConceptRecurring(id: string, recurring: boolean) {
   revalidatePath("/")
 }
 
+export async function setConceptRecurringMonths(id: string, months: number[]) {
+  await prisma.concept.update({ where: { id }, data: { recurringMonths: months } })
+  revalidatePath("/categorias")
+  revalidatePath("/")
+}
+
 export async function toggleConceptActive(id: string, active: boolean) {
   await prisma.concept.update({ where: { id }, data: { active } })
   revalidatePath("/categorias")
