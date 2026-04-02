@@ -57,7 +57,7 @@ export function DueDateNote({
 
     return (
       <button onClick={startEditing} className="text-xs text-red-500 hover:text-red-600">
-        {warning && "⚠️ "}vence {note}
+        {warning && "⚠️ "}vence <strong>{note}</strong>
       </button>
     )
   }
