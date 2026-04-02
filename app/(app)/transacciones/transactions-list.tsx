@@ -36,14 +36,20 @@ export function TransactionsList({
 }: TransactionsListProps) {
   const [showForm, setShowForm] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("")
+  const [conceptFilter, setConceptFilter] = useState("")
   const [accountFilter, setAccountFilter] = useState("")
   const router = useRouter()
 
   const visibleTransactions = transactions.filter((t) => {
     if (categoryFilter && t.concept?.category.id !== categoryFilter) return false
+    if (conceptFilter && t.conceptId !== conceptFilter) return false
     if (accountFilter && t.accountId !== accountFilter) return false
     return true
   })
+
+  const conceptsForFilter = categoryFilter
+    ? categories.find((c) => c.id === categoryFilter)?.concepts ?? []
+    : categories.flatMap((c) => c.concepts)
 
   function navigate(y: number, m: number) {
     router.push(`/transacciones?year=${y}&month=${m}`)
@@ -94,11 +100,21 @@ export function TransactionsList({
       <div className="flex flex-wrap gap-2">
         <select
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          onChange={(e) => { setCategoryFilter(e.target.value); setConceptFilter("") }}
           className="border rounded-md px-3 py-1.5 text-sm bg-background"
         >
           <option value="">Todas las categorías</option>
           {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <select
+          value={conceptFilter}
+          onChange={(e) => setConceptFilter(e.target.value)}
+          className="border rounded-md px-3 py-1.5 text-sm bg-background"
+        >
+          <option value="">Todos los conceptos</option>
+          {conceptsForFilter.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
