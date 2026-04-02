@@ -43,6 +43,8 @@ model Concept {
   categoryId      String
   recurring       Boolean       @default(false)
   recurringMonths Int[]
+  paymentUrl      String?
+  dueDateNote     String?
   active          Boolean       @default(true)
   category        Category      @relation(fields: [categoryId], references: [id])
   transactions    Transaction[]

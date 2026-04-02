@@ -118,13 +118,14 @@ function ConceptRow({ concept, categories }: { concept: Concept; categories: Cat
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(concept.name)
   const [editCategoryId, setEditCategoryId] = useState(concept.categoryId)
+  const [editPaymentUrl, setEditPaymentUrl] = useState(concept.paymentUrl ?? "")
   const [loading, setLoading] = useState(false)
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!editName.trim()) return
     setLoading(true)
-    await updateConcept(concept.id, editName.trim(), editCategoryId)
+    await updateConcept(concept.id, editName.trim(), editCategoryId, editPaymentUrl.trim())
     setLoading(false)
     setEditing(false)
   }
@@ -150,6 +151,13 @@ function ConceptRow({ concept, categories }: { concept: Concept; categories: Cat
               ))}
             </SelectContent>
           </Select>
+          <Input
+            value={editPaymentUrl}
+            onChange={(e) => setEditPaymentUrl(e.target.value)}
+            placeholder="URL de pago (opcional)"
+            className="h-8 text-sm w-52"
+            type="url"
+          />
           <Button type="submit" size="sm" disabled={loading}>{loading ? "..." : "Guardar"}</Button>
           <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
         </form>

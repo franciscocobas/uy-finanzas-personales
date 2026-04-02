@@ -44,3 +44,6 @@ next-env.d.ts
 
 # example files (local only, not committed)
 /example_files
+.agents
+.claude
+skills-lock.json

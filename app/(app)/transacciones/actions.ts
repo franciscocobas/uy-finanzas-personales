@@ -139,8 +139,12 @@ export async function createTransaction(data: {
         accountId: data.accountId!,
       },
     })
+    if (data.conceptId) {
+      await prisma.concept.update({ where: { id: data.conceptId }, data: { dueDateNote: null } })
+    }
   }
   revalidatePath("/transacciones")
+  revalidatePath("/")
 }
 
 export async function updateTransaction(

@@ -101,5 +101,11 @@ export async function bulkCreateTransactions(movements: MovementToCreate[]) {
     }
   }
 
+  const conceptIds = [...new Set(movements.filter((m) => m.conceptId).map((m) => m.conceptId!))]
+  if (conceptIds.length > 0) {
+    await prisma.concept.updateMany({ where: { id: { in: conceptIds } }, data: { dueDateNote: null } })
+  }
+
   revalidatePath("/transacciones")
+  revalidatePath("/")
 }

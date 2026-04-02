@@ -31,8 +31,11 @@ export async function createConcept(name: string, categoryId: string) {
   revalidatePath("/categorias")
 }
 
-export async function updateConcept(id: string, name: string, categoryId?: string) {
-  await prisma.concept.update({ where: { id }, data: { name, ...(categoryId ? { categoryId } : {}) } })
+export async function updateConcept(id: string, name: string, categoryId?: string, paymentUrl?: string) {
+  await prisma.concept.update({
+    where: { id },
+    data: { name, ...(categoryId ? { categoryId } : {}), paymentUrl: paymentUrl || null },
+  })
   revalidatePath("/categorias")
 }
 

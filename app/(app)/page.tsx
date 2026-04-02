@@ -1,8 +1,16 @@
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { MonthlyChart } from "./monthly-chart"
 import { CategoryPieChart } from "./category-pie-chart"
+import { DueDateNote } from "./due-date-note"
 
 export const revalidate = 3600 // 1 hora
+
+async function setDueDateNote(id: string, note: string) {
+  "use server"
+  await prisma.concept.update({ where: { id }, data: { dueDateNote: note || null } })
+  revalidatePath("/")
+}
 
 function formatAmount(amount: number) {
   return amount.toLocaleString("es-UY", { minimumFractionDigits: 2 })
@@ -35,7 +43,7 @@ export default async function HomePage() {
     }),
     prisma.concept.findMany({
       where: { recurring: true },
-      select: { id: true, name: true, recurringMonths: true },
+      select: { id: true, name: true, recurringMonths: true, paymentUrl: true, dueDateNote: true },
       orderBy: { name: "asc" },
     }),
     prisma.transaction.findMany({
@@ -128,8 +136,25 @@ export default async function HomePage() {
                 const paid = paidConceptIds.has(concept.id)
                 return (
                   <div key={concept.id} className="flex items-center justify-between px-4 py-1">
-                    <p className={`text-sm ${paid ? "" : "text-muted-foreground"}`}>{concept.name}</p>
-                    <span className="text-lg">{paid ? "✅" : "⬜"}</span>
+                    <div>
+                      <p className={`text-sm ${paid ? "" : "text-muted-foreground"}`}>{concept.name}</p>
+                      {!paid && (
+                        <DueDateNote conceptId={concept.id} note={concept.dueDateNote} onSave={setDueDateNote} />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!paid && concept.paymentUrl && (
+                        <a
+                          href={concept.paymentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full bg-blue-500 px-2.5 py-0.5 text-xs font-medium text-white"
+                        >
+                          Pagar
+                        </a>
+                      )}
+                      <span className="text-lg">{paid ? "✅" : "⬜"}</span>
+                    </div>
                   </div>
                 )
               })}
