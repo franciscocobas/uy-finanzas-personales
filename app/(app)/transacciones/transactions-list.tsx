@@ -38,12 +38,14 @@ export function TransactionsList({
   const [categoryFilter, setCategoryFilter] = useState("")
   const [conceptFilter, setConceptFilter] = useState("")
   const [accountFilter, setAccountFilter] = useState("")
+  const [typeFilter, setTypeFilter] = useState("")
   const router = useRouter()
 
   const visibleTransactions = transactions.filter((t) => {
     if (categoryFilter && t.concept?.category.id !== categoryFilter) return false
     if (conceptFilter && t.conceptId !== conceptFilter) return false
     if (accountFilter && t.accountId !== accountFilter) return false
+    if (typeFilter && t.type !== typeFilter) return false
     return true
   })
 
@@ -99,6 +101,26 @@ export function TransactionsList({
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="border rounded-md px-3 py-1.5 text-sm bg-background"
+        >
+          <option value="">Todos los tipos</option>
+          <option value="INCOME">Ingresos</option>
+          <option value="EXPENSE">Egresos</option>
+          <option value="TRANSFER">Transferencias</option>
+        </select>
+        <select
+          value={accountFilter}
+          onChange={(e) => setAccountFilter(e.target.value)}
+          className="border rounded-md px-3 py-1.5 text-sm bg-background"
+        >
+          <option value="">Todas las cuentas</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+        <select
           value={categoryFilter}
           onChange={(e) => { setCategoryFilter(e.target.value); setConceptFilter("") }}
           className="border rounded-md px-3 py-1.5 text-sm bg-background"
@@ -116,16 +138,6 @@ export function TransactionsList({
           <option value="">Todos los conceptos</option>
           {conceptsForFilter.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <select
-          value={accountFilter}
-          onChange={(e) => setAccountFilter(e.target.value)}
-          className="border rounded-md px-3 py-1.5 text-sm bg-background"
-        >
-          <option value="">Todas las cuentas</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
           ))}
         </select>
       </div>
