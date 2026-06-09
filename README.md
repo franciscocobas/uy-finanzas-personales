@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Finanzas Personales UY
 
-## Getting Started
+Web app de finanzas personales de uso personal, optimizada para móvil. Permite registrar transacciones, hacer seguimiento de gastos por categoría, gestionar presupuesto mensual y recibir recordatorios de pagos recurrentes.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, Turbopack)
+- **TypeScript**
+- **Tailwind CSS v4**
+- **shadcn/ui** (preset Nova)
+- **Prisma 7** con PostgreSQL en Neon
+- **Auth.js v5** (email/password)
+- **Resend** (emails de recordatorio)
+- **Deploy en Vercel**
+
+## Funcionalidades
+
+- **Dashboard**: balance del mes, tracker de pagos recurrentes, gráfica de gastos por categoría y comparativa ingresos/egresos por mes
+- **Transacciones**: listado por año/mes con filtros por tipo, cuenta, categoría y concepto; creación, edición y eliminación con confirmación inline
+- **Transferencias**: guardadas como doble entrada vinculada, excluidas de reportes de ingresos/egresos
+- **Importación**: carga de extractos bancarios (BROU, BROU Recompensa) con flujo de previsualización y revisión
+- **Categorías y conceptos**: CRUD completo; los conceptos pueden marcarse como recurrentes con meses específicos opcionales
+- **Presupuesto**: tabla anual de ingresos/egresos por concepto con selector de año
+- **Buscador**: búsqueda de comprobantes históricos por descripción o concepto
+- **Recordatorios por email**: enviados automáticamente los lunes y el día 10 de cada mes vía cron de Vercel
+
+## Desarrollo local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Requiere un archivo `.env.local` con las variables de entorno para la base de datos (Neon), Auth.js y Resend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Base de datos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm prisma migrate dev
+pnpm prisma generate
+```
