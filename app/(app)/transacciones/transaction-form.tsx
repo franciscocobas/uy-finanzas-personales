@@ -77,7 +77,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
     const data = {
       date,
       type: type as TransactionType,
-      amount: parseFloat(amount.replace(",", ".")),
+      amount: parseFloat(amount.replace(/\./g, "").replace(",", ".")),
       description: description || undefined,
       conceptId: (type !== "TRANSFER" && type !== "ADJUSTMENT") ? conceptId : undefined,
       accountId: type !== "TRANSFER" ? accountId : undefined,
