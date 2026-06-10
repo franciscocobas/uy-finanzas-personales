@@ -48,8 +48,19 @@ model Concept {
   active          Boolean       @default(true)
   category        Category      @relation(fields: [categoryId], references: [id])
   transactions    Transaction[]
+  recurringCompletions RecurringCompletion[]
 
   @@unique([name, categoryId])
+}
+
+model RecurringCompletion {
+  id        String  @id @default(cuid())
+  conceptId String
+  year      Int
+  month     Int
+  concept   Concept @relation(fields: [conceptId], references: [id])
+
+  @@unique([conceptId, year, month])
 }
 
 model Transaction {

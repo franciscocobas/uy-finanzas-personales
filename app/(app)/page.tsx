@@ -3,12 +3,23 @@ import { prisma } from "@/lib/prisma"
 import { MonthlyChart } from "./monthly-chart"
 import { CategoryPieChart } from "./category-pie-chart"
 import { DueDateNote } from "./due-date-note"
+import { RecurringCheckbox } from "./recurring-checkbox"
 
 export const revalidate = 3600 // 1 hora
 
 async function setDueDateNote(id: string, note: string) {
   "use server"
   await prisma.concept.update({ where: { id }, data: { dueDateNote: note || null } })
+  revalidatePath("/")
+}
+
+async function toggleRecurringCompletion(conceptId: string, year: number, month: number, completed: boolean) {
+  "use server"
+  if (completed) {
+    await prisma.recurringCompletion.deleteMany({ where: { conceptId, year, month } })
+  } else {
+    await prisma.recurringCompletion.create({ data: { conceptId, year, month } })
+  }
   revalidatePath("/")
 }
 
@@ -26,7 +37,7 @@ export default async function HomePage() {
   const year = now.getUTCFullYear()
   const month = now.getUTCMonth() // 0-indexed
 
-  const [monthTransactions, yearTransactions, recurringConcepts, expensesByCategory, last12MonthsExpenses] = await Promise.all([
+  const [monthTransactions, yearTransactions, recurringConcepts, expensesByCategory, last12MonthsExpenses, manualCompletions] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         date: { gte: new Date(Date.UTC(year, month, 1)), lt: new Date(Date.UTC(year, month + 1, 1)) },
@@ -62,6 +73,10 @@ export default async function HomePage() {
       },
       select: { amount: true, concept: { select: { category: { select: { name: true } } } } },
     }),
+    prisma.recurringCompletion.findMany({
+      where: { year, month: month + 1 },
+      select: { conceptId: true },
+    }),
   ])
 
   const income = monthTransactions
@@ -80,8 +95,11 @@ export default async function HomePage() {
     (c) => c.recurringMonths.length === 0 || c.recurringMonths.includes(currentMonth)
   )
 
-  // Which recurring concepts were paid this month
-  const paidConceptIds = new Set(monthTransactions.map((t) => t.conceptId).filter(Boolean))
+  // Which recurring concepts were paid this month (via transaction or manual completion)
+  const paidConceptIds = new Set([
+    ...monthTransactions.map((t) => t.conceptId).filter(Boolean),
+    ...manualCompletions.map((c) => c.conceptId),
+  ])
 
   // Aggregate year data by month
   const monthlyMap: Record<number, { income: number; expense: number }> = {}
@@ -153,7 +171,13 @@ export default async function HomePage() {
                           Pagar
                         </a>
                       )}
-                      <span className="text-lg">{paid ? "✅" : "⬜"}</span>
+                      <RecurringCheckbox
+                        conceptId={concept.id}
+                        year={year}
+                        month={month + 1}
+                        completed={paid}
+                        onToggle={toggleRecurringCompletion}
+                      />
                     </div>
                   </div>
                 )
