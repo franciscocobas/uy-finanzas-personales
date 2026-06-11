@@ -16,7 +16,7 @@ export interface ReviewMovement {
   type: "INCOME" | "EXPENSE" | "TRANSFER"
   accountId: string
   date: Date
-  amount: number
+  amount: string        // editable text — supports "." and "," (parsed on import)
   description: string
   conceptId: string
   toAccountId: string   // only for TRANSFER

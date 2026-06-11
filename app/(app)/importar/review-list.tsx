@@ -32,10 +32,6 @@ function formatDate(date: Date) {
   return new Date(date).toLocaleDateString("es-UY", { timeZone: "UTC" })
 }
 
-function formatAmount(amount: number) {
-  return amount.toLocaleString("es-UY", { minimumFractionDigits: 2 })
-}
-
 interface ReviewListProps {
   movements: ResolvedMovement[]
   duplicateFlags: boolean[]
@@ -54,7 +50,7 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
       type: m.type,
       accountId: m.accountId,
       date: m.date,
-      amount: m.amount,
+      amount: String(m.amount),
       description: m.description,
       conceptId: "",
       toAccountId: "",
@@ -84,7 +80,7 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
       activeRows.map((r) => ({
         date: r.date.toISOString(),
         type: r.type,
-        amount: r.amount,
+        amount: parseFloat(r.amount.replace(/\./g, "").replace(",", ".")) || 0,
         accountId: r.accountId,
         conceptId: r.conceptId,
         description: r.description,
@@ -126,11 +122,10 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
                 <Badge className={TYPE_COLORS[row.type]}>{TYPE_LABELS[row.type]}</Badge>
                 <span className="text-sm text-muted-foreground">{formatDate(row.date)}</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={row.amount}
-                  onChange={(e) => update(i, { amount: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => update(i, { amount: e.target.value })}
                   className="w-24 font-medium text-sm border rounded px-2 py-0.5 bg-background"
                 />
                 <span className="text-xs text-muted-foreground">
