@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Mic, X } from "lucide-react"
 import { parseDictation, type ParsedDictation } from "./actions"
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function DictationForm({ accounts, categories, defaultAccountId }: Props) {
+  const router = useRouter()
   const [text, setText] = useState("")
   const [isParsing, startParsing] = useTransition()
   const [parsed, setParsed] = useState<ParsedDictation | null>(null)
@@ -77,7 +79,13 @@ export function DictationForm({ accounts, categories, defaultAccountId }: Props)
           categories={categories}
           defaultAccountId={defaultAccountId}
           initial={initial}
-          onDone={reset}
+          onDone={(saved) => {
+            if (saved) {
+              router.push("/transacciones")
+            } else {
+              reset()
+            }
+          }}
         />
       </div>
     )

@@ -45,7 +45,8 @@ interface TransactionFormProps {
   accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
-  onDone: () => void
+  // saved=true cuando se guardó; false/undefined al cancelar
+  onDone: (saved?: boolean) => void
   editing?: EditingTransaction
   // Valores para pre-llenar el form en una creación (ej: dictado por voz).
   // No activa el modo edición: sigue llamando a createTransaction.
@@ -104,7 +105,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
     }
 
     setLoading(false)
-    onDone()
+    onDone(true)
   }
 
   return (
@@ -236,7 +237,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
         <Button type="submit" disabled={loading}>
           {loading ? "Guardando..." : editing ? "Guardar cambios" : "Guardar comprobante"}
         </Button>
-        <Button type="button" variant="ghost" onClick={onDone}>
+        <Button type="button" variant="ghost" onClick={() => onDone(false)}>
           Cancelar
         </Button>
       </div>
