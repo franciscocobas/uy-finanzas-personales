@@ -32,15 +32,27 @@ interface EditingTransaction {
   toAccountId?: string
 }
 
+interface InitialValues {
+  type?: string
+  date?: string // YYYY-MM-DD
+  amount?: string
+  description?: string
+  conceptId?: string
+  accountId?: string
+}
+
 interface TransactionFormProps {
   accounts: SerializedAccount[]
   categories: CategoryWithConcepts[]
   defaultAccountId: string | null
   onDone: () => void
   editing?: EditingTransaction
+  // Valores para pre-llenar el form en una creación (ej: dictado por voz).
+  // No activa el modo edición: sigue llamando a createTransaction.
+  initial?: InitialValues
 }
 
-export function TransactionForm({ accounts, categories, defaultAccountId, onDone, editing }: TransactionFormProps) {
+export function TransactionForm({ accounts, categories, defaultAccountId, onDone, editing, initial }: TransactionFormProps) {
   const today = new Date().toLocaleDateString("en-CA") // YYYY-MM-DD in local tz
 
   function toDateInput(d: Date) {
@@ -49,12 +61,12 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
     return dt.toISOString().split("T")[0]
   }
 
-  const [type, setType] = useState(editing?.type ?? "EXPENSE")
-  const [date, setDate] = useState(editing ? toDateInput(editing.date) : today)
-  const [amount, setAmount] = useState(editing ? String(editing.amount) : "")
-  const [description, setDescription] = useState(editing?.description ?? "")
-  const [conceptId, setConceptId] = useState(editing?.conceptId ?? "")
-  const [accountId, setAccountId] = useState(editing?.accountId ?? defaultAccountId ?? "")
+  const [type, setType] = useState(editing?.type ?? initial?.type ?? "EXPENSE")
+  const [date, setDate] = useState(editing ? toDateInput(editing.date) : (initial?.date ?? today))
+  const [amount, setAmount] = useState(editing ? String(editing.amount) : (initial?.amount ?? ""))
+  const [description, setDescription] = useState(editing?.description ?? initial?.description ?? "")
+  const [conceptId, setConceptId] = useState(editing?.conceptId ?? initial?.conceptId ?? "")
+  const [accountId, setAccountId] = useState(editing?.accountId ?? initial?.accountId ?? defaultAccountId ?? "")
   const [fromAccountId, setFromAccountId] = useState(editing?.fromAccountId ?? "")
   const [toAccountId, setToAccountId] = useState(editing?.toAccountId ?? "")
   const [loading, setLoading] = useState(false)
