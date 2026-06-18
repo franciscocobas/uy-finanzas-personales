@@ -3,12 +3,13 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, ArrowLeftRight, Wallet, Tags, LogOut, Upload, PiggyBank } from "lucide-react"
+import { LayoutDashboard, ArrowLeftRight, Wallet, Tags, LogOut, Upload, PiggyBank, Mic } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 const navItems = [
   { href: "/", label: "Inicio", icon: LayoutDashboard },
+  { href: "/dictar", label: "Dictar gasto", icon: Mic },
   { href: "/transacciones", label: "Comprobantes", icon: ArrowLeftRight },
   { href: "/cuentas", label: "Cuentas", icon: Wallet },
   { href: "/categorias", label: "Categorías y Conceptos", icon: Tags },

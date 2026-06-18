@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Sidebar } from "@/components/sidebar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu } from "lucide-react"
+import { Menu, Mic } from "lucide-react"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
@@ -30,6 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <span className="font-semibold">Uy Finanzas Personales</span>
+          <Button asChild variant="ghost" size="icon" className="ml-auto">
+            <Link href="/dictar" aria-label="Dictar gasto">
+              <Mic className="h-5 w-5" />
+            </Link>
+          </Button>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">

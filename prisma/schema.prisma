@@ -93,3 +93,13 @@ enum TransactionType {
   TRANSFER
   ADJUSTMENT
 }
+
+// Etapa 1 del dictado de gastos: guarda frases en lenguaje natural tal cual
+// las dicta/escribe el usuario, para juntar ejemplos reales con los que luego
+// diseñar el parseo con IA (Etapa 2). Todavía no se convierten en Transaction.
+model ExpenseDictation {
+  id        String   @id @default(cuid())
+  text      String
+  userAgent String?
+  createdAt DateTime @default(now())
+}
