@@ -64,7 +64,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onDone
 
   const [type, setType] = useState(editing?.type ?? initial?.type ?? "EXPENSE")
   const [date, setDate] = useState(editing ? toDateInput(editing.date) : (initial?.date ?? today))
-  const [amount, setAmount] = useState(editing ? String(editing.amount) : (initial?.amount ?? ""))
+  const [amount, setAmount] = useState(editing ? String(editing.amount).replace(".", ",") : (initial?.amount ?? ""))
   const [description, setDescription] = useState(editing?.description ?? initial?.description ?? "")
   const [conceptId, setConceptId] = useState(editing?.conceptId ?? initial?.conceptId ?? "")
   const [accountId, setAccountId] = useState(editing?.accountId ?? initial?.accountId ?? defaultAccountId ?? "")
