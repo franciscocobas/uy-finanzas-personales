@@ -45,18 +45,21 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
   const [loading, setLoading] = useState(false)
 
   const [rows, setRows] = useState<ReviewMovement[]>(() =>
-    [...movements].sort((a, b) => a.date.getTime() - b.date.getTime()).map((m, i) => ({
-      tempId: String(i),
-      type: m.type,
-      accountId: m.accountId,
-      date: m.date,
-      amount: String(m.amount),
-      description: m.description,
-      conceptId: "",
-      toAccountId: "",
-      excluded: duplicateFlags[i],
-      duplicateWarning: duplicateFlags[i],
-    }))
+    movements
+      .map((m, i) => ({ m, duplicate: duplicateFlags[i] ?? false }))
+      .sort((a, b) => a.m.date.getTime() - b.m.date.getTime())
+      .map(({ m, duplicate }, i) => ({
+        tempId: String(i),
+        type: m.type,
+        accountId: m.accountId,
+        date: m.date,
+        amount: String(m.amount).replace(".", ","),
+        description: m.description,
+        conceptId: "",
+        toAccountId: "",
+        excluded: duplicate,
+        duplicateWarning: duplicate,
+      }))
   )
 
   function update(index: number, changes: Partial<ReviewMovement>) {
@@ -131,7 +134,7 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
                 <span className="text-xs text-muted-foreground">
                   {accounts.find((a) => a.id === row.accountId)?.name}
                 </span>
-                {row.duplicateWarning && !row.excluded && (
+                {row.duplicateWarning && (
                   <span className="text-xs text-amber-600">⚠ posible duplicado</span>
                 )}
               </div>
