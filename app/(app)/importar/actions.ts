@@ -34,7 +34,8 @@ export async function checkDuplicates(
       const existing = await prisma.transaction.findFirst({
         where: {
           accountId,
-          amount,
+          // As a string: a JS number loses precision against the Decimal column (e.g. 87.54 never matches)
+          amount: amount.toFixed(2),
           date: { gte: start, lte: end },
         },
       })
