@@ -15,7 +15,7 @@ export async function getImportFormData() {
       .then((a) => a.map((acc) => ({ ...acc, balance: Number(acc.balance) }))),
     prisma.category.findMany({
       orderBy: { name: "asc" },
-      include: { concepts: { orderBy: { name: "asc" } } },
+      include: { concepts: { where: { active: true }, orderBy: { name: "asc" } } },
     }),
   ])
   return { accounts, categories }
