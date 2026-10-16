@@ -12,9 +12,10 @@ export const metadata: Metadata = {
   title: "Finanzas Personales",
   description: "App de finanzas personales",
   icons: {
-    icon: "/logo.png",
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     apple: "/apple-touch-icon.png",
   },
+  manifest: "/site.webmanifest",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
