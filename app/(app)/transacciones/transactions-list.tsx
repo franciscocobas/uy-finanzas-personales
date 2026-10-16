@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, SlidersHorizontal } from "lucide-react"
 import { TransactionForm } from "./transaction-form"
 import { TransactionRow, type SerializedAccount, type CategoryWithConcepts, type SerializedTransaction } from "./transaction-row"
 
@@ -39,6 +39,7 @@ export function TransactionsList({
   const [conceptFilter, setConceptFilter] = useState("")
   const [accountFilter, setAccountFilter] = useState("")
   const [typeFilter, setTypeFilter] = useState("")
+  const [showFilters, setShowFilters] = useState(false)
   const router = useRouter()
 
   const visibleTransactions = transactions.filter((t) => {
@@ -48,6 +49,8 @@ export function TransactionsList({
     if (typeFilter && t.type !== typeFilter) return false
     return true
   })
+
+  const hasActiveFilters = Boolean(categoryFilter || conceptFilter || accountFilter || typeFilter)
 
   const conceptsForFilter = categoryFilter
     ? categories.find((c) => c.id === categoryFilter)?.concepts ?? []
@@ -72,6 +75,15 @@ export function TransactionsList({
         </select>
 
         <div className="flex gap-2">
+          <Button
+            variant={showFilters || hasActiveFilters ? "default" : "outline"}
+            size="icon"
+            onClick={() => setShowFilters((v) => !v)}
+            title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+            aria-pressed={showFilters}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="icon" asChild>
             <Link href="/transacciones/buscar" title="Buscar comprobantes">
               <Search className="h-4 w-4" />
@@ -99,48 +111,50 @@ export function TransactionsList({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="border rounded-md px-3 py-1.5 text-sm bg-background"
-        >
-          <option value="">Todos los tipos</option>
-          <option value="INCOME">Ingresos</option>
-          <option value="EXPENSE">Egresos</option>
-          <option value="TRANSFER">Transferencias</option>
-        </select>
-        <select
-          value={accountFilter}
-          onChange={(e) => setAccountFilter(e.target.value)}
-          className="border rounded-md px-3 py-1.5 text-sm bg-background"
-        >
-          <option value="">Todas las cuentas</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
-        <select
-          value={categoryFilter}
-          onChange={(e) => { setCategoryFilter(e.target.value); setConceptFilter("") }}
-          className="border rounded-md px-3 py-1.5 text-sm bg-background"
-        >
-          <option value="">Todas las categorías</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <select
-          value={conceptFilter}
-          onChange={(e) => setConceptFilter(e.target.value)}
-          className="border rounded-md px-3 py-1.5 text-sm bg-background"
-        >
-          <option value="">Todos los conceptos</option>
-          {conceptsForFilter.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </div>
+      {showFilters && (
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+          >
+            <option value="">Todos los tipos</option>
+            <option value="INCOME">Ingresos</option>
+            <option value="EXPENSE">Egresos</option>
+            <option value="TRANSFER">Transferencias</option>
+          </select>
+          <select
+            value={accountFilter}
+            onChange={(e) => setAccountFilter(e.target.value)}
+            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+          >
+            <option value="">Todas las cuentas</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setConceptFilter("") }}
+            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+          >
+            <option value="">Todas las categorías</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <select
+            value={conceptFilter}
+            onChange={(e) => setConceptFilter(e.target.value)}
+            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+          >
+            <option value="">Todos los conceptos</option>
+            {conceptsForFilter.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* New transaction form */}
       {showForm && (
