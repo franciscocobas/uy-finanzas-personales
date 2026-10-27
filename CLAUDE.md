@@ -32,10 +32,9 @@ pnpm
 - [x] Página de importación con flujo multi-paso (subir archivo → previsualizar → revisar)
 - [x] Parsers de importación para BROU y BROU Recompensa
 - [x] Scripts de migración histórica (movimientos.xlsx) y seeds (cuentas, categorías, conceptos)
-- [x] Home: balance del mes corriente (ingresos/egresos/balance)
+- [x] Home: promedio mensual de ingresos/egresos/ahorro de los últimos 6 meses completos
 - [x] Home: tracker de pagos recurrentes del mes (filtra por meses configurados)
-- [x] Home: gráfica de torta de gastos por categoría del mes corriente
-- [x] Home: gráfica de barras de ingresos vs egresos por mes del año
+- [x] Home: gastos del mes corriente vs promedio por categoría (cada categoría enlaza a /transacciones con el filtro aplicado vía `?category=<id>`)
 - [x] Top loading bar en navegación entre páginas
 - [x] Buscador de comprobantes histórico en /transacciones/buscar (busca por descripción y concepto)
 - [x] /presupuesto: tabla anual de ingresos/egresos por concepto con selector de año
