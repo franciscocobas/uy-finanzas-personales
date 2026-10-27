@@ -78,7 +78,14 @@ export function TransactionRow({ transaction: t, allTransactions, accounts, cate
           <div className={`sm:hidden w-3 h-3 rounded-full shrink-0 ${TYPE_DOT_COLORS[t.type]}`} />
           <Badge className={`hidden sm:inline-flex ${TYPE_COLORS[t.type]}`}>{TYPE_LABELS[t.type]}</Badge>
           <div className="min-w-0">
-            <p className="font-medium truncate">
+            <p
+              className="font-medium truncate"
+              title={
+                t.type === "TRANSFER" || t.type === "ADJUSTMENT"
+                  ? t.description ?? undefined
+                  : [t.concept?.name, t.description].filter(Boolean).join(" — ") || undefined
+              }
+            >
               {t.type === "TRANSFER" || t.type === "ADJUSTMENT"
                 ? <span className="font-normal">{t.description ?? "—"}</span>
                 : <>{t.concept?.name ?? "—"}{t.description && <span className="font-normal text-muted-foreground"> — {t.description}</span>}</>
