@@ -1,7 +1,6 @@
 import { revalidatePath } from "next/cache"
+import Link from "next/link"
 import { prisma } from "@/lib/prisma"
-import { MonthlyChart } from "./monthly-chart"
-import { CategoryPieChart } from "./category-pie-chart"
 import { DueDateNote } from "./due-date-note"
 import { RecurringCheckbox } from "./recurring-checkbox"
 
@@ -23,8 +22,10 @@ async function toggleRecurringCompletion(conceptId: string, year: number, month:
   revalidatePath("/")
 }
 
+const AVERAGE_MONTHS = 6
+
 function formatAmount(amount: number) {
-  return amount.toLocaleString("es-UY", { minimumFractionDigits: 2 })
+  return amount.toLocaleString("es-UY", { maximumFractionDigits: 0 })
 }
 
 const MONTH_NAMES = [
@@ -37,57 +38,38 @@ export default async function HomePage() {
   const year = now.getUTCFullYear()
   const month = now.getUTCMonth() // 0-indexed
 
-  const [monthTransactions, yearTransactions, recurringConcepts, expensesByCategory, last12MonthsExpenses, manualCompletions] = await Promise.all([
+  const transactionSelect = {
+    type: true,
+    amount: true,
+    conceptId: true,
+    concept: { select: { category: { select: { id: true, name: true } } } },
+  } as const
+
+  const [monthTransactions, previousTransactions, recurringConcepts, manualCompletions] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         date: { gte: new Date(Date.UTC(year, month, 1)), lt: new Date(Date.UTC(year, month + 1, 1)) },
         type: { in: ["INCOME", "EXPENSE"] },
       },
-      select: { type: true, amount: true, conceptId: true },
+      select: transactionSelect,
     }),
     prisma.transaction.findMany({
       where: {
-        date: { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) },
+        date: { gte: new Date(Date.UTC(year, month - AVERAGE_MONTHS, 1)), lt: new Date(Date.UTC(year, month, 1)) },
         type: { in: ["INCOME", "EXPENSE"] },
       },
-      select: { type: true, amount: true, date: true },
+      select: transactionSelect,
     }),
     prisma.concept.findMany({
       where: { recurring: true },
       select: { id: true, name: true, recurringMonths: true, paymentUrl: true, dueDateNote: true },
       orderBy: { name: "asc" },
     }),
-    prisma.transaction.findMany({
-      where: {
-        date: { gte: new Date(Date.UTC(year, month, 1)), lt: new Date(Date.UTC(year, month + 1, 1)) },
-        type: "EXPENSE",
-        concept: { isNot: null },
-      },
-      select: { amount: true, concept: { select: { category: { select: { name: true } } } } },
-    }),
-    prisma.transaction.findMany({
-      where: {
-        date: { gte: new Date(Date.UTC(year, month - 12, 1)), lt: new Date(Date.UTC(year, month, 1)) },
-        type: "EXPENSE",
-        concept: { isNot: null },
-      },
-      select: { amount: true, concept: { select: { category: { select: { name: true } } } } },
-    }),
     prisma.recurringCompletion.findMany({
       where: { year, month: month + 1 },
       select: { conceptId: true },
     }),
   ])
-
-  const income = monthTransactions
-    .filter((t) => t.type === "INCOME")
-    .reduce((sum, t) => sum + Number(t.amount), 0)
-
-  const expense = monthTransactions
-    .filter((t) => t.type === "EXPENSE")
-    .reduce((sum, t) => sum + Number(t.amount), 0)
-
-  const balance = income - expense
 
   // Filter recurring concepts applicable to current month (1-indexed)
   const currentMonth = month + 1
@@ -101,44 +83,37 @@ export default async function HomePage() {
     ...manualCompletions.map((c) => c.conceptId),
   ])
 
-  // Aggregate year data by month
-  const monthlyMap: Record<number, { income: number; expense: number }> = {}
-  for (const t of yearTransactions) {
-    const m = t.date.getUTCMonth() + 1
-    if (!monthlyMap[m]) monthlyMap[m] = { income: 0, expense: 0 }
-    if (t.type === "INCOME") monthlyMap[m].income += Number(t.amount)
-    else monthlyMap[m].expense += Number(t.amount)
-  }
-  const monthlyData = Object.entries(monthlyMap)
-    .map(([m, v]) => ({ month: Number(m), ...v }))
-    .sort((a, b) => a.month - b.month)
+  // Monthly averages over the last AVERAGE_MONTHS complete months
+  const sumByType = (rows: typeof monthTransactions, type: "INCOME" | "EXPENSE") =>
+    rows.filter((t) => t.type === type).reduce((sum, t) => sum + Number(t.amount), 0)
 
-  // Aggregate expenses by category
-  const categoryMap: Record<string, number> = {}
-  for (const t of expensesByCategory) {
-    const name = t.concept?.category?.name
-    if (!name) continue
-    categoryMap[name] = (categoryMap[name] ?? 0) + Number(t.amount)
-  }
-  const categoryData = Object.entries(categoryMap)
-    .map(([category, amount]) => ({ category, amount }))
-    .sort((a, b) => b.amount - a.amount)
+  const avgIncome = sumByType(previousTransactions, "INCOME") / AVERAGE_MONTHS
+  const avgExpense = sumByType(previousTransactions, "EXPENSE") / AVERAGE_MONTHS
+  const avgSavings = avgIncome - avgExpense
+  const monthExpense = sumByType(monthTransactions, "EXPENSE")
 
-  // Monthly average per category over last 12 months (excluding current month)
-  const last12Map: Record<string, number> = {}
-  for (const t of last12MonthsExpenses) {
-    const name = t.concept?.category?.name
-    if (!name) continue
-    last12Map[name] = (last12Map[name] ?? 0) + Number(t.amount)
+  // Current month vs average, per expense category
+  const categoryMap: Record<string, { categoryId?: string; current: number; average: number }> = {}
+  const addToCategory = (rows: typeof monthTransactions, key: "current" | "average", divisor: number) => {
+    for (const t of rows) {
+      if (t.type !== "EXPENSE") continue
+      const name = t.concept?.category?.name ?? "Sin categoría"
+      categoryMap[name] ??= { categoryId: t.concept?.category?.id, current: 0, average: 0 }
+      categoryMap[name][key] += Number(t.amount) / divisor
+    }
   }
-  const categoryAverages = Object.entries(last12Map)
-    .map(([category, total]) => ({ category, average: total / 12 }))
-    .sort((a, b) => b.average - a.average)
+  addToCategory(monthTransactions, "current", 1)
+  addToCategory(previousTransactions, "average", AVERAGE_MONTHS)
+  const categoryComparison = Object.entries(categoryMap)
+    .map(([category, v]) => ({ category, ...v }))
+    .sort((a, b) => b.average - a.average || b.current - a.current)
 
-  // Date range label for last 12 months
-  const rangeStart = new Date(Date.UTC(year, month - 12, 1))
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+  const dayOfMonth = now.getUTCDate()
+
+  const rangeStart = new Date(Date.UTC(year, month - AVERAGE_MONTHS, 1))
   const rangeEnd = new Date(Date.UTC(year, month - 1, 1))
-  const rangeLabel = `${MONTH_NAMES[rangeStart.getUTCMonth()]} ${rangeStart.getUTCFullYear()} – ${MONTH_NAMES[rangeEnd.getUTCMonth()]} ${rangeEnd.getUTCFullYear()}`
+  const rangeLabel = `${MONTH_NAMES[rangeStart.getUTCMonth()]} – ${MONTH_NAMES[rangeEnd.getUTCMonth()]}`
 
   return (
     <div className="space-y-6">
@@ -186,68 +161,74 @@ export default async function HomePage() {
           </div>
         )}
 
-        {/* Col derecha: balance + gastos por categoría */}
+        {/* Col derecha: mes actual vs promedio de los últimos meses */}
         <div className="sm:col-span-2 space-y-6">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              {MONTH_NAMES[month]} {year}
+              Promedio mensual — {rangeLabel}
             </h3>
-            <div className="border rounded-lg divide-y">
-              <div className="flex items-center justify-between px-4 py-3">
-                <p className="text-sm">Ingresos</p>
-                <p className="font-medium tabular-nums text-green-600">{formatAmount(income)}</p>
+            <div className="grid grid-cols-3 border rounded-lg divide-x">
+              <div className="px-3 py-3">
+                <p className="text-xs text-muted-foreground">Ingresos</p>
+                <p className="font-medium tabular-nums text-green-600">{formatAmount(avgIncome)}</p>
               </div>
-              <div className="flex items-center justify-between px-4 py-3">
-                <p className="text-sm">Egresos</p>
-                <p className="font-medium tabular-nums text-red-600">{formatAmount(expense)}</p>
+              <div className="px-3 py-3">
+                <p className="text-xs text-muted-foreground">Egresos</p>
+                <p className="font-medium tabular-nums text-red-600">{formatAmount(avgExpense)}</p>
               </div>
-              <div className="flex items-center justify-between px-4 py-3 bg-muted/40">
-                <p className="text-sm font-semibold">Balance</p>
-                <p className={`font-semibold tabular-nums ${balance < 0 ? "text-red-600" : "text-green-600"}`}>
-                  {formatAmount(balance)}
+              <div className="px-3 py-3">
+                <p className="text-xs text-muted-foreground">Ahorro</p>
+                <p className={`font-medium tabular-nums ${avgSavings < 0 ? "text-red-600" : "text-green-600"}`}>
+                  {formatAmount(avgSavings)}
                 </p>
               </div>
             </div>
           </div>
 
-          {categoryData.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                Gastos por categoría — {MONTH_NAMES[month]} {year}
-              </h3>
-              <div className="border rounded-lg p-4">
-                <CategoryPieChart data={categoryData} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Ingresos vs egresos del año — ocupa ambas columnas */}
-        {monthlyData.length > 0 && (
-          <div className="sm:col-span-3">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">{year} — Ingresos vs Egresos</h3>
-            <div className="border rounded-lg p-4">
-              <MonthlyChart data={monthlyData} />
-            </div>
-          </div>
-        )}
-
-        {/* Promedio mensual por categoría — últimos 12 meses */}
-        {categoryAverages.length > 0 && (
-          <div className="sm:col-span-3">
+          <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Promedio mensual por categoría — {rangeLabel}
+              {MONTH_NAMES[month]} vs promedio (día {dayOfMonth} de {daysInMonth})
             </h3>
             <div className="border rounded-lg divide-y">
-              {categoryAverages.map(({ category, average }) => (
-                <div key={category} className="flex items-center justify-between px-4 py-2">
-                  <p className="text-sm">{category}</p>
-                  <p className="text-sm font-medium tabular-nums text-red-600">{formatAmount(average)}</p>
-                </div>
-              ))}
+              {[{ category: "Total", categoryId: undefined, current: monthExpense, average: avgExpense }, ...categoryComparison].map(
+                ({ category, categoryId, current, average }) => {
+                  const pct = average > 0 ? (current / average) * 100 : null
+                  const over = pct === null ? current > 0 : pct > 100
+                  const isTotal = category === "Total"
+                  const monthUrl = `/transacciones?year=${year}&month=${month + 1}`
+                  const href = categoryId ? `${monthUrl}&category=${categoryId}` : isTotal ? monthUrl : null
+                  const className = `block px-4 py-2 space-y-1 ${isTotal ? "bg-muted/40" : ""}`
+                  const content = (
+                    <>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className={`text-sm ${isTotal ? "font-semibold" : ""}`}>{category}</p>
+                        <p className="text-sm tabular-nums whitespace-nowrap">
+                          <span className={`font-medium ${over ? "text-red-600" : ""}`}>{formatAmount(current)}</span>
+                          <span className="text-muted-foreground"> / {formatAmount(average)}</span>
+                        </p>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${over ? "bg-red-500" : "bg-primary"}`}
+                          style={{ width: `${Math.min(pct ?? (current > 0 ? 100 : 0), 100)}%` }}
+                        />
+                      </div>
+                    </>
+                  )
+                  return href ? (
+                    <Link key={category} href={href} className={`${className} hover:bg-muted/60`}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={category} className={className}>
+                      {content}
+                    </div>
+                  )
+                },
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

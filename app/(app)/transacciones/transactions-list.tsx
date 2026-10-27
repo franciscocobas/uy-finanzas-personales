@@ -22,6 +22,7 @@ interface TransactionsListProps {
   month: number
   availableMonths: number[]
   availableYears: number[]
+  initialCategoryId?: string
 }
 
 export function TransactionsList({
@@ -33,13 +34,14 @@ export function TransactionsList({
   month,
   availableMonths,
   availableYears,
+  initialCategoryId = "",
 }: TransactionsListProps) {
   const [showForm, setShowForm] = useState(false)
-  const [categoryFilter, setCategoryFilter] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState(initialCategoryId)
   const [conceptFilter, setConceptFilter] = useState("")
   const [accountFilter, setAccountFilter] = useState("")
   const [typeFilter, setTypeFilter] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState(Boolean(initialCategoryId))
   const router = useRouter()
 
   const visibleTransactions = transactions.filter((t) => {

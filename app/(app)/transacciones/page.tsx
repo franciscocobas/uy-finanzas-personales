@@ -2,7 +2,7 @@ import { getTransactions, getFormData, getAvailableMonths, getAvailableYears } f
 import { TransactionsList } from "./transactions-list"
 
 interface Props {
-  searchParams: Promise<{ year?: string; month?: string }>
+  searchParams: Promise<{ year?: string; month?: string; category?: string }>
 }
 
 export default async function TransaccionesPage({ searchParams }: Props) {
@@ -34,6 +34,7 @@ export default async function TransaccionesPage({ searchParams }: Props) {
         month={month}
         availableMonths={availableMonths}
         availableYears={availableYears}
+        initialCategoryId={params.category}
       />
     </div>
   )
