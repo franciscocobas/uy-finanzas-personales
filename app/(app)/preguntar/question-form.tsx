@@ -98,6 +98,12 @@ export function QuestionForm() {
             <p className="text-destructive text-sm">{result.error}</p>
           )}
 
+          {result.costUsd > 0 && (
+            <p className="text-muted-foreground text-xs">
+              Esta pregunta costó US${result.costUsd.toFixed(result.costUsd < 0.01 ? 4 : 2)}
+            </p>
+          )}
+
           {result.queries.length > 0 && (
             <details className="text-muted-foreground text-xs">
               <summary className="cursor-pointer">

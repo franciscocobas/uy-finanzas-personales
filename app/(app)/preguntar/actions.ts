@@ -5,6 +5,6 @@ import { askQuestion as runQuestion, type AskResult } from "@/lib/preguntar"
 
 export async function askQuestion(question: string): Promise<AskResult> {
   const session = await auth()
-  if (!session?.user) return { ok: false, error: "No autorizado.", queries: [] }
+  if (!session?.user) return { ok: false, error: "No autorizado.", queries: [], costUsd: 0 }
   return runQuestion(question)
 }

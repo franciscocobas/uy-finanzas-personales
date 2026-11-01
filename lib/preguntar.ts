@@ -23,8 +23,26 @@ function getAnthropic(): Anthropic | null {
 }
 
 export type AskResult =
-  | { ok: true; answer: string; queries: string[] }
-  | { ok: false; error: string; queries: string[] }
+  | { ok: true; answer: string; queries: string[]; costUsd: number }
+  | { ok: false; error: string; queries: string[]; costUsd: number }
+
+// US$ por millón de tokens. Cache write = escritura de 5 minutos.
+const PRICES: Record<string, { input: number; output: number; cacheWrite: number; cacheRead: number }> = {
+  "claude-opus-5-5": { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 },
+  "claude-opus-4-8": { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5 },
+}
+
+function responseCost(response: Anthropic.Beta.BetaMessage): number {
+  const p = PRICES[response.model] ?? PRICES[MODEL]
+  const u = response.usage
+  return (
+    (u.input_tokens * p.input +
+      u.output_tokens * p.output +
+      (u.cache_creation_input_tokens ?? 0) * p.cacheWrite +
+      (u.cache_read_input_tokens ?? 0) * p.cacheRead) /
+    1_000_000
+  )
+}
 
 const SYSTEM = `Respondés preguntas sobre las finanzas personales del usuario (Uruguay, español rioplatense) consultando su base PostgreSQL con la herramienta run_sql. Montos en pesos uruguayos salvo que el concepto o la descripción indiquen otra moneda.
 
@@ -91,13 +109,14 @@ async function runSql(db: PrismaClient, sql: string): Promise<{ content: string;
 
 export async function askQuestion(question: string): Promise<AskResult> {
   const queries: string[] = []
+  let costUsd = 0
   const trimmed = question.trim()
-  if (!trimmed) return { ok: false, error: "La pregunta está vacía.", queries }
+  if (!trimmed) return { ok: false, error: "La pregunta está vacía.", queries, costUsd }
 
   const anthropic = getAnthropic()
-  if (!anthropic) return { ok: false, error: "Falta configurar ANTHROPIC_API_KEY.", queries }
+  if (!anthropic) return { ok: false, error: "Falta configurar ANTHROPIC_API_KEY.", queries, costUsd }
   const db = getReadonlyPrisma()
-  if (!db) return { ok: false, error: "Falta configurar DATABASE_URL_READONLY.", queries }
+  if (!db) return { ok: false, error: "Falta configurar DATABASE_URL_READONLY.", queries, costUsd }
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Montevideo" })
   const messages: Anthropic.Beta.BetaMessageParam[] = [
@@ -116,9 +135,10 @@ export async function askQuestion(question: string): Promise<AskResult> {
         tools: [runSqlTool],
         messages,
       })
+      costUsd += responseCost(response)
 
       if (response.stop_reason === "refusal") {
-        return { ok: false, error: "El modelo no quiso responder esa pregunta.", queries }
+        return { ok: false, error: "El modelo no quiso responder esa pregunta.", queries, costUsd }
       }
 
       if (response.stop_reason !== "tool_use") {
@@ -128,8 +148,8 @@ export async function askQuestion(question: string): Promise<AskResult> {
           .join("\n")
           .trim()
         return answer
-          ? { ok: true, answer, queries }
-          : { ok: false, error: "El modelo no devolvió una respuesta.", queries }
+          ? { ok: true, answer, queries, costUsd }
+          : { ok: false, error: "El modelo no devolvió una respuesta.", queries, costUsd }
       }
 
       messages.push({ role: "assistant", content: response.content })
@@ -144,15 +164,15 @@ export async function askQuestion(question: string): Promise<AskResult> {
       }
       messages.push({ role: "user", content: toolResults })
     }
-    return { ok: false, error: "La consulta necesitó demasiados pasos. Probá con una pregunta más concreta.", queries }
+    return { ok: false, error: "La consulta necesitó demasiados pasos. Probá con una pregunta más concreta.", queries, costUsd }
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) {
-      return { ok: false, error: "La API key de Anthropic es inválida.", queries }
+      return { ok: false, error: "La API key de Anthropic es inválida.", queries, costUsd }
     }
     if (e instanceof Anthropic.RateLimitError) {
-      return { ok: false, error: "Límite de uso de la API alcanzado. Probá en un rato.", queries }
+      return { ok: false, error: "Límite de uso de la API alcanzado. Probá en un rato.", queries, costUsd }
     }
     const msg = e instanceof Error ? e.message : "Error desconocido"
-    return { ok: false, error: `Error al consultar a Claude: ${msg}`, queries }
+    return { ok: false, error: `Error al consultar a Claude: ${msg}`, queries, costUsd }
   }
 }
