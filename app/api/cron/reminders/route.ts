@@ -39,10 +39,10 @@ export async function GET(request: Request) {
 
   const currentMonth = month + 1
 
-  const [allRecurringConcepts, monthTransactions] = await Promise.all([
+  const [allRecurringConcepts, monthTransactions, completions] = await Promise.all([
     prisma.concept.findMany({
       where: { recurring: true, active: true },
-      select: { id: true, name: true, recurringMonths: true },
+      select: { id: true, name: true, recurringMonths: true, dueDateNote: true },
       orderBy: { name: "asc" },
     }),
     prisma.transaction.findMany({
@@ -55,17 +55,25 @@ export async function GET(request: Request) {
       },
       select: { conceptId: true },
     }),
+    prisma.recurringCompletion.findMany({
+      where: { year, month: currentMonth },
+      select: { conceptId: true },
+    }),
   ]);
 
   const recurringConcepts = allRecurringConcepts.filter(
     (c) => c.recurringMonths.length === 0 || c.recurringMonths.includes(currentMonth)
   )
 
-  const paidConceptIds = new Set(monthTransactions.map((t) => t.conceptId).filter(Boolean));
+  // Pagado = tiene transacción en el mes o fue marcado a mano en la home
+  const paidConceptIds = new Set([
+    ...monthTransactions.map((t) => t.conceptId).filter(Boolean),
+    ...completions.map((c) => c.conceptId),
+  ]);
 
   const pendientes = recurringConcepts
     .filter((c) => !paidConceptIds.has(c.id))
-    .map((c) => c.name);
+    .map((c) => ({ nombre: c.name, nota: c.dueDateNote }));
 
   const pagados = recurringConcepts
     .filter((c) => paidConceptIds.has(c.id))

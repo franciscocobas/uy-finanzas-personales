@@ -13,7 +13,7 @@ import {
 
 interface PagosPendientesEmailProps {
   mes: string;
-  pendientes: string[];
+  pendientes: { nombre: string; nota: string | null }[];
   pagados: string[];
 }
 
@@ -33,11 +33,12 @@ export default function RecordatorioPagosEmail({
           {pendientes.length > 0 && (
             <Section style={section}>
               <Text style={sectionTitle}>Pendientes</Text>
-              {pendientes.map((nombre) => (
+              {pendientes.map(({ nombre, nota }) => (
                 <Row key={nombre} style={row}>
                   <Column style={iconColumn}>⬜</Column>
                   <Column>
                     <Text style={itemText}>{nombre}</Text>
+                    {nota && <Text style={noteText}>{nota}</Text>}
                   </Column>
                 </Row>
               ))}
@@ -117,6 +118,12 @@ const itemText: React.CSSProperties = {
   fontSize: 14,
   color: "#18181b",
   margin: 0,
+};
+
+const noteText: React.CSSProperties = {
+  fontSize: 12,
+  color: "#71717a",
+  margin: "2px 0 0",
 };
 
 const footer: React.CSSProperties = {
