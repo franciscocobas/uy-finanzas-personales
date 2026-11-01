@@ -39,6 +39,7 @@ pnpm
 - [x] Buscador de comprobantes histórico en /transacciones/buscar (busca por descripción y concepto)
 - [x] /presupuesto: tabla anual de ingresos/egresos por concepto con selector de año
 - [x] Recordatorios por email (Resend) vía cron de Vercel (lunes y día 10 de cada mes)
+- [x] /preguntar: preguntas en lenguaje natural que Claude responde consultando la base con un rol de solo lectura (`DATABASE_URL_READONLY`, sin acceso a `User`)
 - [ ] Parser de importación para Prex
 
 ## Modelo de transferencias
