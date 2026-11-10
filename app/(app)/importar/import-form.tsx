@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Upload } from "lucide-react"
 import { brouParser } from "@/lib/importers/brou"
 import { brouRecompensaParser } from "@/lib/importers/brou-recompensa"
@@ -26,6 +27,7 @@ export function ImportForm() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [bank, setBank] = useState("")
+  const [usdRate, setUsdRate] = useState("")
   const [step, setStep] = useState<Step>("select")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +52,10 @@ export function ImportForm() {
     try {
       const buffer = await file.arrayBuffer()
       const parser = PARSERS[bank]
-      const parsed = parser.parse(buffer)
+      const rate = parseFloat(usdRate.replace(",", "."))
+      const parsed = parser.parse(buffer, {
+        usdRate: bank === "brou-recompensa" && rate > 0 ? rate : undefined,
+      })
 
       const data = await getImportFormData()
 
@@ -128,6 +133,22 @@ export function ImportForm() {
           <option value="prex">Prex</option>
         </select>
       </div>
+
+      {bank === "brou-recompensa" && (
+        <div className="space-y-2">
+          <label htmlFor="usd-rate" className="text-sm font-medium">Cotización del dólar</label>
+          <Input
+            id="usd-rate"
+            inputMode="decimal"
+            placeholder="Ej: 40"
+            value={usdRate}
+            onChange={(e) => setUsdRate(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Si la completás, los gastos en USD se importan en pesos. Vacío = se importan en USD.
+          </p>
+        </div>
+      )}
 
       <div
         className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-accent/50 transition-colors"

@@ -55,10 +55,16 @@ Las transferencias se guardan como **dos registros** vinculados por `transferId`
 Los parsers viven en `lib/importers/`. Cada banco implementa la interfaz `BankParser`:
 ```ts
 interface BankParser {
-  parse(buffer: ArrayBuffer): RawMovement[]
+  parse(buffer: ArrayBuffer, options?: ParseOptions): RawMovement[]
 }
 ```
 `RawMovement` retorna `accountName` (no ID) — el formulario resuelve el ID contra la DB.
+
+`ParseOptions.usdRate`: en BROU Recompensa el formulario pide una cotización opcional; si se completa, los gastos en USD se convierten a pesos (monto × cotización) y la descripción guarda el monto original (`... (USD 5.99)`).
+
+Descuentos BROU Recompensa: las filas `DTO.BROU-...` no se importan como ingreso; se restan de la compra en pesos del mismo día cuyo monto da un porcentaje redondo (múltiplo de 5 %) y la descripción queda `... (dto. BROU 23.03)`. Si no hay compra que coincida, queda como ingreso con aviso en la revisión.
+
+Telepeaje BROU Recompensa: las filas con `CVU` en la descripción, del mismo día y mismo importe, se agrupan en un solo egreso (`OFICINA CENTRAL CVU (8 × 167)`).
 
 Bancos implementados: `brou.ts`, `brou-recompensa.ts`
 Pendiente: `prex.ts`

@@ -14,6 +14,9 @@ type ResolvedMovement = {
   type: "INCOME" | "EXPENSE"
   description: string
   accountId: string
+  isUSD?: boolean
+  discount?: number
+  unmatchedDiscount?: boolean
 }
 import type { Account, Category, Concept } from "@/lib/generated/prisma/client"
 import { bulkCreateTransactions } from "./actions"
@@ -59,6 +62,9 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
         toAccountId: "",
         excluded: duplicate,
         duplicateWarning: duplicate,
+        isUSD: m.isUSD ?? false,
+        hasDiscount: m.discount !== undefined,
+        unmatchedDiscount: m.unmatchedDiscount ?? false,
       }))
   )
 
@@ -134,6 +140,15 @@ export function ReviewList({ movements, duplicateFlags, accounts, categories, on
                 <span className="text-xs text-muted-foreground">
                   {accounts.find((a) => a.id === row.accountId)?.name}
                 </span>
+                {row.isUSD && (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-0">Gasto en dólares</Badge>
+                )}
+                {row.hasDiscount && (
+                  <Badge className="bg-violet-100 text-violet-800 border-0">Con descuento</Badge>
+                )}
+                {row.unmatchedDiscount && (
+                  <span className="text-xs text-amber-600">⚠ descuento sin compra asociada</span>
+                )}
                 {row.duplicateWarning && (
                   <span className="text-xs text-amber-600">⚠ posible duplicado</span>
                 )}
