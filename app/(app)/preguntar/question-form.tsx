@@ -4,8 +4,8 @@ import { useState, useTransition } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
-import { askQuestion } from "./actions"
+import { Trash2, X } from "lucide-react"
+import { askQuestion, deleteQuestion, type SavedQuestionItem } from "./actions"
 import type { AskResult } from "@/lib/preguntar"
 
 const EXAMPLES = [
@@ -14,10 +14,26 @@ const EXAMPLES = [
   "¿En qué categoría gasté más el mes pasado?",
 ]
 
-export function QuestionForm() {
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString("es-UY", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function formatCost(costUsd: number) {
+  return `US$${costUsd.toFixed(costUsd < 0.01 ? 4 : 2)}`
+}
+
+export function QuestionForm({ initialHistory }: { initialHistory: SavedQuestionItem[] }) {
   const [question, setQuestion] = useState("")
   const [asked, setAsked] = useState("")
   const [result, setResult] = useState<AskResult | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [history, setHistory] = useState(initialHistory)
   const [isAsking, startAsking] = useTransition()
 
   function handleAsk(text = question) {
@@ -25,10 +41,34 @@ export function QuestionForm() {
     if (!trimmed) return
     setQuestion(trimmed)
     setResult(null)
+    setSelectedId(null)
     startAsking(async () => {
       setAsked(trimmed)
-      setResult(await askQuestion(trimmed))
+      const saved = await askQuestion(trimmed)
+      if ("error" in saved) {
+        setResult({ ok: false, error: saved.error, queries: [], costUsd: 0 })
+        return
+      }
+      setResult(saved.result)
+      setSelectedId(saved.id)
+      setHistory((h) => [saved, ...h])
     })
+  }
+
+  function showSaved(item: SavedQuestionItem) {
+    setAsked(item.question)
+    setResult(item.result)
+    setSelectedId(item.id)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  async function handleDelete(id: string) {
+    setHistory((h) => h.filter((item) => item.id !== id))
+    if (selectedId === id) {
+      setResult(null)
+      setSelectedId(null)
+    }
+    await deleteQuestion(id)
   }
 
   return (
@@ -100,7 +140,7 @@ export function QuestionForm() {
 
           {result.costUsd > 0 && (
             <p className="text-muted-foreground text-xs">
-              Esta pregunta costó US${result.costUsd.toFixed(result.costUsd < 0.01 ? 4 : 2)}
+              Esta pregunta costó {formatCost(result.costUsd)}
             </p>
           )}
 
@@ -118,6 +158,38 @@ export function QuestionForm() {
               </div>
             </details>
           )}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <h3 className="text-sm font-medium">Historial</h3>
+          <ul className="divide-y rounded-lg border">
+            {history.map((item) => (
+              <li key={item.id} className={`flex items-start gap-2 ${item.id === selectedId ? "bg-accent" : ""}`}>
+                <button
+                  type="button"
+                  onClick={() => showSaved(item)}
+                  className="hover:bg-accent min-w-0 flex-1 px-3 py-2 text-left transition-colors"
+                >
+                  <p className="text-sm">{item.question}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {formatDate(item.createdAt)}
+                    {item.result.costUsd > 0 && ` · ${formatCost(item.result.costUsd)}`}
+                    {!item.result.ok && " · con error"}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id)}
+                  aria-label="Borrar del historial"
+                  className="text-muted-foreground hover:text-destructive hover:bg-accent m-1 rounded-md p-1.5 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

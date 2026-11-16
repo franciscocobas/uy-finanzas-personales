@@ -103,3 +103,15 @@ model ExpenseDictation {
   userAgent String?
   createdAt DateTime @default(now())
 }
+
+// Historial de /preguntar: cada pregunta con la respuesta (o el error), las
+// consultas SQL que hizo Claude y lo que costó.
+model SavedQuestion {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String?
+  error     String?
+  queries   String[]
+  costUsd   Float    @default(0)
+  createdAt DateTime @default(now())
+}
