@@ -54,9 +54,11 @@ export function TransactionsList({
 
   const hasActiveFilters = Boolean(categoryFilter || conceptFilter || accountFilter || typeFilter)
 
-  const conceptsForFilter = categoryFilter
-    ? categories.find((c) => c.id === categoryFilter)?.concepts ?? []
-    : categories.flatMap((c) => c.concepts)
+  const conceptsForFilter = (
+    categoryFilter
+      ? categories.find((c) => c.id === categoryFilter)?.concepts ?? []
+      : categories.flatMap((c) => c.concepts)
+  ).toSorted((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }))
 
   function navigate(y: number, m: number) {
     router.push(`/transacciones?year=${y}&month=${m}`)
