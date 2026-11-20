@@ -40,7 +40,7 @@ pnpm
 - [x] /presupuesto: tabla anual de ingresos/egresos por concepto con selector de año
 - [x] Recordatorios por email (Resend) vía cron de Vercel (lunes y día 10 de cada mes)
 - [x] /preguntar: preguntas en lenguaje natural que Claude responde consultando la base con un rol de solo lectura (`DATABASE_URL_READONLY`, sin acceso a `User`); cada pregunta se guarda en `SavedQuestion` y se muestra en un historial (ver de nuevo sin volver a pagar, borrar)
-- [ ] Parser de importación para Prex
+- [x] Parser de importación para Prex (lee columnas por encabezado: soporta el export viejo y el nuevo de nov-2026)
 
 ## Modelo de transferencias
 
@@ -66,8 +66,7 @@ Descuentos BROU Recompensa: las filas `DTO.BROU-...` no se importan como ingreso
 
 Telepeaje BROU Recompensa: las filas con `CVU` en la descripción, del mismo día y mismo importe, se agrupan en un solo egreso (`OFICINA CENTRAL CVU (8 × 167)`).
 
-Bancos implementados: `brou.ts`, `brou-recompensa.ts`
-Pendiente: `prex.ts`
+Bancos implementados: `brou.ts`, `brou-recompensa.ts`, `prex.ts`
 
 ## Modelo de conceptos recurrentes
 
